@@ -1,0 +1,15 @@
+SOP-VM-001: Valve Maintenance Intervals
+
+All manual valves in the process unit shall be inspected and lubricated
+every 90 days. The inspection covers stem packing, handwheel operation,
+and visible leaks. Actuated valves require a functional stroke test every
+30 days to confirm full open and close travel within the rated time.
+
+Valve inspection records must be logged in the maintenance register on
+the same day as the inspection. Any valve that fails the stroke test
+must be tagged out of service and reported to the shift supervisor
+before the end of shift.
+
+Critical isolation valves on the flare header are inspected monthly
+without exception. Spare valve inventory is verified quarterly to
+ensure replacements are available for all critical sizes.

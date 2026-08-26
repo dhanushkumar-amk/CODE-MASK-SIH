@@ -125,24 +125,33 @@ def safe_parse_json(text: str) -> dict | None:
     # Remove markdown code fences: ```json ... ``` or ``` ... ```
     cleaned = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", cleaned)
 
+    # Helper: parse a candidate string, leniently when needed. Covers two
+    # common small-model breakages: literal newlines/tabs inside JSON string
+    # values (strict JSON rejects them; strict=False accepts), and truncated
+    # trailing closing braces (the model emits `...10}` instead of
+    # `...10}}`). Repair: retry with up to 3 appended `}`.
+    def _try_parse(candidate: str) -> dict | None:
+        attempts = [candidate]
+        attempts += [candidate + "}" * n for n in range(1, 4)]
+        for attempt in attempts:
+            for strict in (True, False):
+                try:
+                    result = json.loads(attempt, strict=strict)
+                    if isinstance(result, dict):
+                        return result
+                except (json.JSONDecodeError, ValueError):
+                    continue
+        return None
+
     # First attempt: the whole cleaned text should already be JSON.
-    try:
-        result = json.loads(cleaned)
-        if isinstance(result, dict):
-            return result
-    except (json.JSONDecodeError, ValueError):
-        pass
+    if (result := _try_parse(cleaned)) is not None:
+        return result
 
     # Second attempt: extract the first {...} or [...] block. This handles
     # models that prepend commentary like "Here is the JSON:".
     match = re.search(r"(\{.*\}|\[.*\])", cleaned, re.DOTALL)
     if match:
-        try:
-            result = json.loads(match.group(1))
-            if isinstance(result, dict):
-                return result
-        except (json.JSONDecodeError, ValueError):
-            pass
+        return _try_parse(match.group(1))
 
     return None
 

@@ -72,11 +72,18 @@ AVAILABLE_TOOLS = [
     {
         "name": "code_execute",
         "description": "Execute a code snippet in a sandboxed environment",
-        "params": {"code": "<code snippet>"},
+        "params": {
+            "code": "<code snippet>",
+            "timeout_seconds": "<optional, seconds to allow, default 10>",
+        },
     },
     {
         "name": "rag_retrieve",
-        "description": "Search the local knowledge base for relevant context",
+        "description": (
+            "Search the organization's internal knowledge base (SOPs, "
+            "manuals) for relevant context to help answer a question or "
+            "inform a task"
+        ),
         "params": {"query": "<search text>"},
     },
     {
@@ -149,6 +156,13 @@ def build_system_prompt() -> str:
         "Never write Python code in expression (no len, open, functions). "
         "If a value comes from an earlier step, use the number itself, "
         "e.g. a 9-word file is just: 9 * 0.2\n\n"
+        "For code_execute, code is a Python script string with newlines as "
+        "\\n, like:\n"
+        '{"action": "tool_call", "tool_name": "code_execute", '
+        '"tool_input": {"code": "print(2 + 2)\\nprint(\'done\')"}, '
+        '"reasoning": "short reason"}\n'
+        "Use code_execute only when the goal asks to write and run Python "
+        "code. Never put file paths or document content in code.\n\n"
         "For docx_generate, put the full document text in content, like:\n"
         '{"action": "tool_call", "tool_name": "docx_generate", '
         '"tool_input": {"title": "Approval Note", "content": "Findings: '

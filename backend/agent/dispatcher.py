@@ -127,7 +127,9 @@ try:
     from tools.pptx_tools import pptx_generate  # noqa: E402
     from tools.xlsx_tools import xlsx_generate  # noqa: E402
     from tools.calculator_tools import calculate_with_steps  # noqa: E402
+    from tools.code_exec_tool import code_execute  # noqa: E402
     from ocr.ocr_tools import extract_text_from_image, extract_text_from_pdf  # noqa: E402
+    from rag.vector_store import query_knowledge_base  # noqa: E402
 
     register_tool("file_read", file_read)
     register_tool("file_write", file_write)
@@ -135,11 +137,36 @@ try:
     register_tool("pptx_generate", pptx_generate)
     register_tool("xlsx_generate", xlsx_generate)
     register_tool("calculator", calculate_with_steps)
+    register_tool("code_execute", code_execute)
     register_tool("ocr_extract_image", extract_text_from_image)
     register_tool("ocr_extract_pdf", extract_text_from_pdf)
 except ImportError:
     # Tool modules not present yet - stubs stay in place.
     pass
+
+
+def _rag_retrieve_for_agent(query: str, n_results: int = 3) -> dict:
+    """RAG retrieval formatted for the model's next reasoning step.
+
+    Flattens query_knowledge_base()'s chunk list + sources into one
+    readable string - the small model parses flat text far better than
+    nested JSON in its context.
+    """
+    result = query_knowledge_base(query, n_results)
+    if result["status"] != "success":
+        return result
+
+    blocks = []
+    for text, source in zip(result["output"], result["sources"]):
+        blocks.append(f"Source: {source}\nContent: {text}")
+    formatted = "\n\n---\n\n".join(blocks)
+
+    return {"status": "success", "output": formatted}
+
+
+# Registered only if the RAG module imported successfully above.
+if "rag_retrieve" in TOOL_REGISTRY:
+    register_tool("rag_retrieve", _rag_retrieve_for_agent)
 
 
 if __name__ == "__main__":

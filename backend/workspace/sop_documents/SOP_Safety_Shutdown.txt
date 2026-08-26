@@ -1,0 +1,15 @@
+SOP-SD-002: Emergency Safety Shutdown Protocol
+
+In the event of a gas leak or confirmed fire, initiate the emergency
+shutdown sequence immediately. First, isolate the affected section by
+closing the section block valves. Second, close the feed valves to stop
+product flow into the affected area.
+
+Third, notify the shift supervisor and the control room operator of the
+shutdown. No restart attempt is permitted until the area has been
+checked with a gas detector and declared safe by the supervisor.
+
+Emergency shutdown drills are conducted quarterly. All operators must
+attend and sign the drill attendance register. The fire extinguishers
+in the affected zones are inspected monthly and their pressure gauges
+must remain in the green zone.

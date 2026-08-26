@@ -78,8 +78,11 @@ STEP_TOOL_SIGNALS = [
     (("spreadsheet", "excel", ".xlsx"), "xlsx_generate"),
     (("scanned image", "scan", ".png", ".jpg", ".jpeg"), "ocr_extract_image"),
     (("scanned pdf", ".pdf"), "ocr_extract_pdf"),
+    (("sop", "knowledge base", "manual", "look up", "search for"), "rag_retrieve"),
     (("save", "write to"), "file_write"),
     (("read the file", "read file"), "file_read"),
+    (("write and run", "run a python", "python function", "python code",
+      "code snippet", "coding task"), "code_execute"),
     (("calculate", "compute"), "calculator"),
 ]
 
@@ -91,6 +94,21 @@ def _step_tool_hint(step: str) -> str | None:
         if any(needle in lowered for needle in needles):
             return tool
     return None
+
+
+def _goal_aware_hint(step: str, goal: str) -> str | None:
+    """Resolve a step's tool hint, letting a coding goal override.
+
+    A goal that explicitly asks to write/run Python code makes every
+    unanchored step (and calculator-anchored steps) a code_execute step:
+    the planner's steps describe the code itself, not a calculator call.
+    """
+    hint = _step_tool_hint(step)
+    if hint is None or hint == "calculator":
+        goal_hint = _step_tool_hint(goal)
+        if goal_hint == "code_execute":
+            return goal_hint
+    return hint
 
 
 def _build_step_prompt(
@@ -114,7 +132,7 @@ def _build_step_prompt(
             step_hint = tool_name
             break
     if step_hint is None:
-        step_hint = _step_tool_hint(step)
+        step_hint = _goal_aware_hint(step, goal)
     if step_hint:
         lines.append(
             f"TOOL REQUIRED FOR THIS STEP: {step_hint}. Call it now as a "
@@ -239,7 +257,7 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
                 # hinted tool deterministically instead of the echo.
                 last_tool = results[-1].get("tool_name") if results else None
                 if tool_name == last_tool:
-                    hinted = _step_tool_hint(step)
+                    hinted = _goal_aware_hint(step, goal)
                     if hinted and hinted != tool_name:
                         print(
                             f"[AGENT] WARNING: model repeated {tool_name!r} "
@@ -300,26 +318,49 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
     # final_answer, give the model one last prompt with all accumulated
     # tool outputs so it can produce the actual answer. This is what turns
     # "file_read succeeded" into "the file says X, summary: Y".
+    #
+    # The 1.5B model sometimes answers the synthesis prompt with another
+    # tool_call (e.g. finally running the code it was asked to write)
+    # instead of final_answer. Dispatch one such call and loop back once,
+    # so a correct-but-late tool call is not silently dropped. Cap at 3
+    # iterations to keep a fixated model from looping forever.
     if not done and results:
-        context_lines = []
-        for r in results:
-            context_lines.append(
-                f"- [{r['action']}] {r['step']}: {str(r['output'])[:500]}"
-            )
-        try:
-            raw = call_model(
-                prompt=(
-                    f"GOAL: {goal}\n\n"
-                    "CONTEXT FROM COMPLETED STEPS:\n"
-                    + "\n".join(context_lines)
-                    + "\n\nAll planned steps have run. Using the context "
-                    "above, give the final answer now."
-                ),
-                system_prompt=build_system_prompt(),
-                response_format="json",
-            )
-            parsed = safe_parse_json(raw)
-            if parsed and parsed.get("action") == "final_answer":
+        for _ in range(3):
+            context_lines = []
+            for r in results:
+                context_lines.append(
+                    f"- [{r['action']}] {r['step']}: {str(r['output'])[:500]}"
+                )
+            try:
+                raw = call_model(
+                    prompt=(
+                        f"GOAL: {goal}\n\n"
+                        "CONTEXT FROM COMPLETED STEPS:\n"
+                        + "\n".join(context_lines)
+                        + "\n\nAll planned steps have run. No more tool "
+                        "calls are allowed. Give the final_answer JSON "
+                        "with the verified result now."
+                    ),
+                    system_prompt=build_system_prompt(),
+                    response_format="json",
+                )
+                parsed = safe_parse_json(raw)
+            except (OllamaError, Exception):  # noqa: BLE001
+                # Synthesis is best-effort; never let it crash the run.
+                break
+
+            if not parsed:
+                break
+
+            action = parsed.get("action")
+            # Same normalization as the main loop: the model may put the
+            # tool name in the action slot.
+            if action in TOOL_REGISTRY_NAMES:
+                parsed["action"] = "tool_call"
+                parsed.setdefault("tool_name", action)
+                action = "tool_call"
+
+            if action == "final_answer":
                 results.append(
                     {
                         "step": "(final synthesis)",
@@ -329,9 +370,27 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
                     }
                 )
                 done = True
-        except (OllamaError, Exception):  # noqa: BLE001
-            # Synthesis is best-effort; never let it crash the run.
-            pass
+                break
+
+            if action == "tool_call":
+                dispatch_result = dispatch_tool_call(parsed)
+                results.append(
+                    {
+                        "step": "(synthesis tool call)",
+                        "status": (
+                            "done"
+                            if dispatch_result["status"] == "success"
+                            else "failed"
+                        ),
+                        "action": "tool_call",
+                        "tool_name": parsed.get("tool_name"),
+                        "output": dispatch_result["output"],
+                    }
+                )
+                continue
+
+            # Unknown action: stop asking, the model is off-track.
+            break
 
     completed = done and all(r["status"] == "done" for r in results)
     return {

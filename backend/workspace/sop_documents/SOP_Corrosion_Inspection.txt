@@ -1,0 +1,15 @@
+SOP-CI-004: Corrosion Inspection Procedures
+
+Piping corrosion inspections are performed every 6 months on high-risk
+lines and every 12 months on standard lines. High-risk lines are those
+carrying corrosive media or operating above 80 degrees Celsius.
+
+Inspectors check wall thickness at designated measurement points using
+ultrasonic testing. Any reading below 80 percent of nominal wall
+thickness requires immediate engineering review.
+
+Minor surface corrosion should be cleaned, coated with a suitable
+inhibitor, and scheduled for re-inspection within 30 days. Pitting that
+exceeds 1 millimeter in depth triggers a full section inspection and
+replacement planning. All findings are recorded with photographs in the
+corrosion register.
