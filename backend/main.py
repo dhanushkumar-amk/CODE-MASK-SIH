@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from agent.ollama_client import OllamaError, call_model
 from config import DEFAULT_MODEL
+from monitor.network_monitor import get_network_stats
 from router.router import LOG_FILE, route_task
 
 app = FastAPI(title="Sovereign AI Workbench API")
@@ -38,6 +39,17 @@ class RouteRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/network-status")
+def network_status():
+    """Current network counters for the live frontend panel.
+
+    Single reading of cumulative system-wide bytes; the Next.js frontend
+    polls this and diffs consecutive responses to display per-second
+    activity.
+    """
+    return get_network_stats()
 
 
 @app.post("/generate", response_model=GenerateResponse)
