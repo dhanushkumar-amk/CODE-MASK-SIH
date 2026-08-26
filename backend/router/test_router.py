@@ -18,13 +18,19 @@ TEST_CASES = [
     ("Extract text from this handwritten note", "vision"),
     ("Identify equipment tags in this photo of the control panel", "vision"),
     ("Process this image of a pipeline drawing", "vision"),
-    # Ambiguous / tricky (3)
+    # Ambiguous / tricky (10)
     (
         "review this python script's logic and summarize the changes needed",
         "coding",
     ),
-    ("extract the vendor name from this scanned invoice", "document"),
+    ("extract the vendor name from this scanned invoice", "vision"),
     ("write code to process scanned images in our pipeline", "coding"),
+    ("summarize this script's purpose", "document"),
+    ("summarize this scanned P&ID diagram", "vision"),
+    ("write a python script to extract text from scanned invoices", "coding"),
+    ("what does this python function do", "document"),
+    ("what does our SOP say about valve maintenance", "document"),
+    ("organize a training programme for new operators", "document"),
 ]
 
 TRUNC = 50

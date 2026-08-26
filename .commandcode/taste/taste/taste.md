@@ -1,5 +1,5 @@
 # Taste
-- Prefers results reported clearly and structured (e.g., pass/fail against requirements, a clear verdict) rather than raw data dumps. Confidence: 0.5
+- Prefers results reported clearly and structured (e.g., pass/fail against requirements, a clear verdict) rather than raw data dumps. Confidence: 0.6
 - Prefers checking whether a tool is already installed before installing it ("if not already present/installed") rather than reinstalling. Confidence: 0.85
 - Prefers verifying installations and setup after completion (version checks, import tests, activation confirmation). Confidence: 0.8
 - Prefers config-driven design over hardcoding (e.g., model/task mappings in a config file) and structuring code so adding a new option only requires one new entry. Confidence: 0.7
@@ -15,3 +15,45 @@
 - Prefers broad, realistic test coverage including deliberately ambiguous/tricky edge cases before a live demo, to surface misclassifications early rather than risk an embarrassing failure. Confidence: 0.7
 - When a test case fails, prefers to first receive the failure analysis plus options and make the decision themselves before any fix is applied, rather than having the code changed immediately. Confidence: 0.8
 - Prefers test harnesses to avoid polluting production artifacts (e.g., import the pure classifier rather than the logging wrapper so tests don't spam the log file). Confidence: 0.7
+- Values consistent, explainable behavior on clear-cut cases over perfect accuracy on ambiguous inputs; explicitly fine with imperfect routing of genuinely ambiguous prompts as long as the rule behind each decision is consistent and explainable. Confidence: 0.85
+- Prefers inline comments that explain WHY each rule/logic branch exists (its rationale), not just what it does. Confidence: 0.8
+- Prefers capturing a baseline measurement before making changes and reporting before/after results (e.g., pass rate) to demonstrate improvement. Confidence: 0.6
+- Prefers keeping prompts/system prompts for small LLMs short and direct (brevity over verbosity), since smaller models follow brief instructions more reliably than long ones. Confidence: 0.8
+- Prefers passing the system prompt via the model API's native `system` field rather than concatenating it into the user prompt. Confidence: 0.7
+- When asking an LLM for structured/JSON output, prefers appending the format constraint to the END of the prompt (small models weight the tail most) and pinning the exact schema inline with an example. Confidence: 0.8
+- Prefers defensive parse helpers that strip markdown fences, extract the first JSON block, and return None (never raise) on unparseable output so callers can degrade gracefully. Confidence: 0.7
+- Prefers verifying stochastic/LLM output across multiple runs and prompt variations to catch flakiness before trusting a single result. Confidence: 0.65
+- Prefers running project Python scripts with the project's virtualenv interpreter (e.g., backend-env\Scripts\python.exe) rather than system python when dependencies are missing. Confidence: 0.7
+- Prefers a skeleton-first, incremental approach: build and verify the core loop/mechanism works reliably (with the small model) before layering on complexity like real tool-calling. Confidence: 0.7
+- Values honest, candid reporting of small-model limitations (what went wrong and why) plus options, deferring the prompt-simplification/fix decision to the next phase rather than overselling results. Confidence: 0.6
+- Prefers extensibility via a registry + registration-function pattern (e.g., TOOL_REGISTRY with register_tool()) so real implementations plug in later without editing the core module again. Confidence: 0.7
+- Prefers distinguishing programmer errors (raise, e.g., dispatching with the wrong action type) from runtime/tool failures (return a clean error dict/status instead of raising) so transient tool problems never crash the agent loop. Confidence: 0.7
+- When an inline shell test command becomes quoting-fragile, prefers switching to a small scratchpad test file (with explicit sys.path fixups) rather than continuing to fight shell quoting. Confidence: 0.6
+- Prefers top-level entry points (e.g., run_agent) to return partial results gracefully and never let an unhandled exception escape, so even a total model outage returns the expected result shape instead of crashing. Confidence: 0.8
+- Prefers bounded failure tolerance in loops: allow one flaky attempt but abort after repeated consecutive failures (e.g., two strikes) rather than grinding uselessly on a broken path. Confidence: 0.7
+- Prefers verifying control-flow paths with deterministic mocks/stubs (monkeypatching the model call to script specific responses or errors) in addition to live stochastic runs. Confidence: 0.7
+- Prefers ensuring a test actually exercises the condition it claims to test (e.g., forcing a multi-step plan before testing a failure-abort threshold) rather than accepting a passing test that never hit the target path. Confidence: 0.6
+- Prefers normalizing/repairing sloppy small-model output (e.g., tool name placed in the `action` slot, non-dict `tool_input`) over overriding the model's decisions with hardcoded keyword rules. Confidence: 0.6
+- Prefers reverting a prompt/loop experiment cleanly (removing the code) when it causes a regression, rather than layering on compensating fixes. Confidence: 0.6
+- For small models, prefers giving a concrete few-shot example for EACH allowed output branch (e.g., both `tool_call` and `final_answer`) so the model has a shape to copy for every choice, not just one. Confidence: 0.7
+- Prefers explicitly stating negative constraints in small-model prompts (e.g., "text-only agent, no GUI, no desktop applications") to prevent confabulating human/GUI steps. Confidence: 0.6
+- Prefers sandboxed/contained file access: resolve paths against a fixed safe base directory, reject any ".." traversal component, and verify the resolved path stays inside the sandbox (blocking absolute paths and symlink escapes). Confidence: 0.85
+- Prefers tool functions to return a uniform result dict (`{"status": "success"/"error", "output": ...}`) for both success and failure paths, so the dispatcher can pass them through without per-tool special cases. Confidence: 0.7
+- Prefers validating tool inputs up front (type, non-empty, required-keys/shape checks) and returning a clear error dict rather than crashing or producing a broken output file. Confidence: 0.7
+- Prefers reusing existing shared logic (e.g., importing the workspace sandbox helpers `WORKSPACE_DIR`/`_resolve_safe`) rather than duplicating it in new modules. Confidence: 0.7
+- Prefers verifying generated artifacts are genuinely valid by inspecting structure/content (e.g., opening a .docx as a ZIP to confirm `word/document.xml`, checking non-zero size), not just the filename/extension. Confidence: 0.75
+- Prefers keeping a tool's declared schema/documentation params in sync with its real function signature so the model emits keys the function actually accepts rather than stale ones. Confidence: 0.6
+- When a tool receives malformed structured input from a small model, prefers forgiving normalization (padding mismatched rows, coercing dict rows to lists, flattening nested headers/lists) with a logged warning, rather than erroring out — but only for salvageable shape issues, not missing/empty required data. Confidence: 0.7
+- When a small model can't reliably emit structured JSON for a tool call, prefers a simplified text-string schema parsed deterministically (e.g., a `table_text` string split on delimiters) over demanding perfect headers/rows JSON. Confidence: 0.6
+- Prefers never using Python's raw `eval()` on untrusted input: parse with `ast` (mode="eval"), walk the tree, whitelist only safe node types/operators (numbers, + - * / **, parentheses, unary +/-), and reject everything else (calls, names, attributes, imports) before evaluating. Confidence: 0.9
+- Prefers calculation/numeric outputs to show the work (plain-English description + expression + result) rather than a bare final number, so results are transparent and auditable. Confidence: 0.6
+- Prefers testing that malicious/unsafe input (e.g., `__import__('os').system(...)`) is blocked cleanly and never executed, in addition to ordinary error-path coverage. Confidence: 0.7
+- Prefers a dedicated checkpoint test for tool wiring: print the registry contents, probe each registered tool with a dummy input to confirm it returns real (non-"[STUB]") output, and cross-check TOOL_REGISTRY against AVAILABLE_TOOLS to catch missing/mismatched entries. Confidence: 0.7
+- When the dispatcher receives tool_input containing keys the tool function doesn't accept (small-model schema leakage), prefers filtering to the function's actual parameters via inspect.signature so stray keys are silently dropped rather than raising TypeError. Confidence: 0.7
+- For the small model, prefers keeping demo/agent tasks to 1–2 tool calls max; multi-tool chains that require derived computation between steps (e.g., count words then compute) are unreliable. Confidence: 0.6
+- When diagnosing flaky agent tool-calls, prefers instrumenting by monkeypatching the dispatch function to log the raw parsed tool-call JSON per step rather than guessing from final results. Confidence: 0.55
+- Prefers satisfying multimodal input requirements via OCR preprocessing (extract text from scans/images with Tesseract, then feed the text to the text-only model) rather than adopting a vision-capable model. Confidence: 0.7
+- When a required system dependency/binary is missing, prefers reporting the exact per-OS install command in the error message rather than failing silently. Confidence: 0.75
+- Prefers auto-detecting and auto-configuring system binaries (probing PATH and common install locations, then setting the library's binary path) rather than requiring manual setup. Confidence: 0.65
+- Prefers generating a synthetic test fixture (e.g., a PIL-rendered image of clean printed text) when a real sample isn't yet available, to exercise a pipeline end-to-end. Confidence: 0.6
+- When an OCR/extraction result is imperfect, prefers diagnosing whether the defect is in the test fixture/composition (e.g., clipped/truncated input) vs the pipeline itself before concluding the pipeline is at fault. Confidence: 0.55
