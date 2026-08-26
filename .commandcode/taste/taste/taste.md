@@ -1,0 +1,17 @@
+# Taste
+- Prefers results reported clearly and structured (e.g., pass/fail against requirements, a clear verdict) rather than raw data dumps. Confidence: 0.5
+- Prefers checking whether a tool is already installed before installing it ("if not already present/installed") rather than reinstalling. Confidence: 0.85
+- Prefers verifying installations and setup after completion (version checks, import tests, activation confirmation). Confidence: 0.8
+- Prefers config-driven design over hardcoding (e.g., model/task mappings in a config file) and structuring code so adding a new option only requires one new entry. Confidence: 0.7
+- Prefers robust error handling: explicit try/except around external service calls, input validation returning clear HTTP status codes (400 for bad input, 503 for unavailable service), connection-failure/timeout handling, and specific user-facing error messages. Confidence: 0.75
+- Prefers testing both success and error/failure paths (e.g., temporarily stopping a service to confirm graceful degradation), not just the happy path. Confidence: 0.75
+- Values local-only operation: wants end-to-end chains with zero external network calls (localhost-to-localhost only). Confidence: 0.7
+- Prefers pure functions with no side effects (no printing, no file writes, string-in/string-out) so logic is easy to unit test in isolation. Confidence: 0.85
+- Prefers type hints and concise docstrings on functions that explain the logic/rules. Confidence: 0.8
+- Prefers runnable self-test blocks under `if __name__ == "__main__":` to verify module behavior directly. Confidence: 0.6
+- Prefers append-mode JSONL logging (one JSON object per line) so logs accumulate across runs instead of overwriting, with directories auto-created via `os.makedirs(..., exist_ok=True)`. Confidence: 0.7
+- Values human-readable log artifacts as evidence/proof of behavior (e.g., routing decisions to point to during a demo). Confidence: 0.6
+- Prefers newest-first (reverse chronological) ordering when displaying accumulated logs/history. Confidence: 0.6
+- Prefers broad, realistic test coverage including deliberately ambiguous/tricky edge cases before a live demo, to surface misclassifications early rather than risk an embarrassing failure. Confidence: 0.7
+- When a test case fails, prefers to first receive the failure analysis plus options and make the decision themselves before any fix is applied, rather than having the code changed immediately. Confidence: 0.8
+- Prefers test harnesses to avoid polluting production artifacts (e.g., import the pure classifier rather than the logging wrapper so tests don't spam the log file). Confidence: 0.7
