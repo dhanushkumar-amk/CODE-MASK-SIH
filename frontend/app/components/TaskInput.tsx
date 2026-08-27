@@ -104,14 +104,17 @@ export default function TaskInput({
   };
 
   return (
-    <div className="w-full border border-neutral-300 bg-white p-5 sm:p-6 shadow-none font-mono text-xs">
+    <div className="w-full border border-slate-300 bg-white p-5 sm:p-6 shadow-none font-mono text-xs">
       <div className="flex flex-col gap-4">
         {/* Monospace label above textarea */}
-        <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-          <label htmlFor="task-input" className="font-bold tracking-wider text-neutral-950 uppercase text-xs">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+          <label htmlFor="task-input" className="font-bold tracking-wider text-slate-950 uppercase text-xs flex items-center gap-2">
+            <span className="h-1.5 w-1.5 bg-slate-950" />
             TASK INPUT
           </label>
-          <span className="text-[10px] text-neutral-500 uppercase">COMMAND CONSOLE</span>
+          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
+            COMMAND CONSOLE
+          </span>
         </div>
 
         {/* Large bordered textarea (command feel) */}
@@ -121,12 +124,12 @@ export default function TaskInput({
           value={taskText}
           onChange={(e) => setTaskText(e.target.value)}
           rows={5}
-          className="resize-none rounded-none border-neutral-300 bg-white font-sans text-sm text-neutral-950 focus-visible:ring-neutral-950 focus-visible:border-neutral-950"
+          className="resize-none rounded-none border-slate-300 bg-white font-sans text-sm text-slate-950 focus-visible:ring-slate-950 focus-visible:border-slate-950"
         />
 
         {/* File Dropzone (Dashed border, becomes solid on drag-over) */}
         <div className="flex flex-col gap-1.5">
-          <span className="font-semibold text-neutral-700 uppercase tracking-wider text-[11px]">
+          <span className="font-semibold text-slate-700 uppercase tracking-wider text-[11px]">
             WORKSPACE ATTACHMENT / SCAN DROP ZONE
           </span>
           <label
@@ -135,8 +138,10 @@ export default function TaskInput({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-              "flex min-h-20 cursor-pointer flex-col items-center justify-center gap-1 border bg-neutral-50/50 px-4 py-4 text-center transition-all",
-              isDragOver ? "border-solid border-neutral-950 bg-neutral-100" : "border-dashed border-neutral-300 hover:bg-neutral-100/70"
+              "flex min-h-20 cursor-pointer flex-col items-center justify-center gap-1 border bg-slate-50/50 px-4 py-4 text-center transition-all",
+              isDragOver
+                ? "border-solid border-slate-950 bg-slate-100"
+                : "border-dashed border-slate-300 hover:bg-slate-100/70"
             )}
           >
             <input
@@ -146,10 +151,10 @@ export default function TaskInput({
               onChange={handleFileChange}
               className="sr-only"
             />
-            <span className="font-bold text-neutral-950">
+            <span className="font-bold text-slate-950">
               {fileName ? `[ATTACHED: ${fileName}]` : "Drop document, PDF scan, spreadsheet, or click to browse"}
             </span>
-            <span className="text-[11px] text-neutral-500">
+            <span className="text-[11px] text-slate-500">
               {fileName ? "Uploaded to local enclave workspace" : "Accepts PDF, CSV, XLSX, DOCX, PPTX, PNG, JPG — stays local"}
             </span>
           </label>
@@ -161,13 +166,13 @@ export default function TaskInput({
           onClick={handleRunTask}
           disabled={!canRun}
           size="lg"
-          className="w-full rounded-none bg-neutral-950 font-mono text-xs uppercase tracking-widest text-white hover:bg-neutral-800 disabled:opacity-50 h-11"
+          className="w-full rounded-none bg-slate-950 font-mono text-xs uppercase tracking-widest text-white hover:bg-slate-800 disabled:opacity-50 h-11 cursor-pointer"
         >
           {submitting ? "PROCESSING LOCAL ENGINE..." : "RUN TASK ->"}
         </Button>
 
         {error && (
-          <div className="border border-neutral-900 bg-neutral-950 px-4 py-2.5 font-mono text-xs text-white">
+          <div className="border border-slate-900 bg-slate-950 px-4 py-2.5 font-mono text-xs text-white">
             [ERROR]: {error}
           </div>
         )}
