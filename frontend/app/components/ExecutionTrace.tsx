@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Loader2, X } from "lucide-react";
+import { Check, ChevronDown, Download, FileText, Loader2, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { AgentRunResult, AgentStep } from "@/lib/api";
+import { getDownloadUrl, type AgentRunResult, type AgentStep } from "@/lib/api";
 
 type StepStatus = AgentStep["status"];
 
@@ -22,9 +22,11 @@ type StepStatus = AgentStep["status"];
 export default function ExecutionTrace({
   result,
   isStreaming = false,
+  onRunGoal,
 }: {
   result: AgentRunResult;
   isStreaming?: boolean;
+  onRunGoal?: (goal: string) => Promise<void>;
 }) {
   // Rows are built ONLY from started/completed steps so the trace grows
   // one row at a time as events arrive; the plan itself is the compact
@@ -75,6 +77,7 @@ export default function ExecutionTrace({
             status={step.status}
             entry={step.entry}
             isLast={index === steps.length - 1}
+            onRunGoal={onRunGoal}
           />
         ))}
       </ol>
@@ -88,12 +91,14 @@ function StepRow({
   status,
   entry,
   isLast,
+  onRunGoal,
 }: {
   number: number;
   planText: string;
   status: StepStatus;
   entry: AgentStep;
   isLast: boolean;
+  onRunGoal?: (goal: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -174,14 +179,147 @@ function StepRow({
                   ? "Final answer"
                   : "Raw tool output"}
               </p>
-              <pre className="overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground">
-                {entry.output || "(empty)"}
-              </pre>
+              <FormattedOutput text={entry.output} goal={entry.step} onRunGoal={onRunGoal} />
             </div>
           </div>
         )}
       </div>
     </li>
+  );
+}
+
+function FormattedOutput({
+  text,
+  goal,
+  onRunGoal,
+}: {
+  text: string;
+  goal?: string;
+  onRunGoal?: (goal: string) => Promise<void>;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [running, setRunning] = useState(false);
+
+  if (!text) return <p className="text-muted-foreground">(empty)</p>;
+
+  const trimmed = text.trim();
+
+  // Detect if text output mentions a generated file (.docx, .pptx, .xlsx, .csv, .pdf, .txt, .json)
+  const fileMatch = text.match(/([a-zA-Z0-9_\-]+\.(?:docx|pptx|xlsx|csv|pdf|txt|json))/i);
+  const detectedFilename = fileMatch ? fileMatch[1] : null;
+
+  const fileDownloadCard = detectedFilename ? (
+    <div className="my-2 flex items-center justify-between rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3.5 py-2.5 text-xs shadow-sm">
+      <div className="flex items-center gap-2">
+        <FileText className="size-4 text-emerald-400" />
+        <span className="font-mono font-semibold text-emerald-200">{detectedFilename}</span>
+      </div>
+      <a
+        href={getDownloadUrl(detectedFilename)}
+        download={detectedFilename}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1 font-sans font-medium text-white shadow transition hover:bg-emerald-500"
+      >
+        <Download className="size-3.5" />
+        Download {detectedFilename.split(".").pop()?.toUpperCase()}
+      </a>
+    </div>
+  ) : null;
+
+  // Split text by markdown code blocks so surrounding explanation text is preserved
+  const parts = trimmed.split(/(```[a-zA-Z]*[\s\S]*?```)/g);
+
+  if (parts.length > 1 || trimmed.startsWith("```")) {
+    return (
+      <div className="flex flex-col gap-2">
+        {fileDownloadCard}
+        {parts.map((part, index) => {
+          const codeMatch = part.match(/^```([a-zA-Z]*)\s*\n([\s\S]*?)\n```$/);
+          if (codeMatch) {
+            const lang = (codeMatch[1] || "CODE").toUpperCase();
+            const codeContent = codeMatch[2];
+
+            const handleCopy = async (e: React.MouseEvent) => {
+              e.stopPropagation();
+              await navigator.clipboard.writeText(codeContent);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            };
+
+            const handleRunInSandbox = async () => {
+              if (running) return;
+              setRunning(true);
+              try {
+                const runGoalText = `write and run python code for ${goal || "the algorithm"}:\n\`\`\`python\n${codeContent}\n\`\`\``;
+                if (onRunGoal) {
+                  await onRunGoal(runGoalText);
+                }
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setRunning(false);
+              }
+            };
+
+            return (
+              <div
+                key={index}
+                className="my-2 overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-md transition-all hover:border-emerald-500/50"
+              >
+                <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-3 py-1.5 font-sans text-xs text-slate-300">
+                  <span className="font-mono text-[10px] font-semibold tracking-wider text-emerald-400">
+                    {lang}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                    >
+                      {copied ? <Check className="size-3 text-emerald-400" /> : null}
+                      {copied ? "Copied!" : "Copy Code"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={running}
+                      onClick={handleRunInSandbox}
+                      className="flex items-center gap-1 rounded bg-emerald-600 px-2.5 py-0.5 text-[11px] font-medium text-white shadow transition hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                      {running ? <Loader2 className="size-3 animate-spin" /> : "▶ Run Code in Sandbox"}
+                    </button>
+                  </div>
+                </div>
+                <pre
+                  onClick={handleRunInSandbox}
+                  title="Click to run this code in Docker sandbox"
+                  className="cursor-pointer overflow-x-auto p-4 font-mono text-xs leading-relaxed text-slate-100 whitespace-pre transition hover:bg-slate-900/60"
+                >
+                  <code>{codeContent}</code>
+                </pre>
+              </div>
+            );
+          }
+
+          if (!part.trim()) return null;
+
+          return (
+            <p key={index} className="whitespace-pre-wrap break-words text-muted-foreground">
+              {part}
+            </p>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {fileDownloadCard}
+      <pre className="overflow-x-auto whitespace-pre-wrap break-words text-muted-foreground">
+        {text}
+      </pre>
+    </div>
   );
 }
 

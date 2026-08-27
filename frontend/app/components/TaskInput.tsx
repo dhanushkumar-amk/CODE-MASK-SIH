@@ -48,9 +48,9 @@ export default function TaskInput({
       let goal = rawText;
       if (fileName) {
         if (!rawText) {
-          goal = `Extract and analyze content from ${fileName}`;
+          goal = `Process, extract and analyze data from attached file ${fileName}`;
         } else {
-          goal = `${rawText} (attached scan: ${fileName})`;
+          goal = `${rawText} (attached file: ${fileName})`;
         }
       }
 
@@ -113,7 +113,7 @@ export default function TaskInput({
 
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-foreground">
-            Or attach a scan
+            Or attach a file or scan
           </span>
           <label
             htmlFor="file-upload"
@@ -124,17 +124,17 @@ export default function TaskInput({
             <input
               id="file-upload"
               type="file"
-              accept="image/*,.pdf,.svg"
+              accept="image/*,.pdf,.svg,.csv,.xlsx,.docx,.pptx,.txt,.json"
               onChange={handleFileChange}
               className="sr-only"
             />
-            <span className="text-sm text-foreground">
-              {fileName ?? "Drop a scan here, or click to browse"}
+            <span className="text-sm font-medium text-foreground">
+              {fileName ?? "Drop a file or scan here, or click to browse"}
             </span>
             <span className="text-xs text-muted-foreground">
               {fileName
                 ? "File selected"
-                : "PNG, JPG, PDF, or SVG — stays on this machine"}
+                : "CSV, XLSX, DOCX, PPTX, PDF, PNG, JPG, or TXT — stays on this machine"}
             </span>
           </label>
         </div>

@@ -4,7 +4,7 @@ import json
 
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from agent.ollama_client import OllamaError, call_model
@@ -12,7 +12,7 @@ from agent.agent_loop import run_agent, run_agent_stream
 from config import DEFAULT_MODEL
 from monitor.network_monitor import get_network_stats
 from router.router import LOG_FILE, route_task
-from tools.file_tools import _resolve_safe
+from tools.file_tools import WORKSPACE_DIR, _resolve_safe
 
 app = FastAPI(title="Sovereign AI Workbench API")
 
@@ -48,13 +48,56 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/files")
+def list_workspace_files():
+    """List all generated documents, presentations, spreadsheets, and files in backend/workspace/."""
+    files = []
+    if WORKSPACE_DIR.exists():
+        for p in WORKSPACE_DIR.iterdir():
+            if p.is_file() and not p.name.startswith("."):
+                files.append({
+                    "filename": p.name,
+                    "size_bytes": p.stat().st_size,
+                    "extension": p.suffix.lower(),
+                })
+    return {"files": files}
+
+
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    """Download or view a generated document (.docx, .pptx, .xlsx, .csv, .txt, .pdf) from backend/workspace/."""
+    safe_path = _resolve_safe(filename)
+    if safe_path is None or not safe_path.exists() or not safe_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"File not found: {filename}",
+        )
+
+    ext = safe_path.suffix.lower()
+    media_types = {
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".csv": "text/csv",
+        ".pdf": "application/pdf",
+        ".txt": "text/plain; charset=utf-8",
+        ".json": "application/json",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+    }
+    content_type = media_types.get(ext, "application/octet-stream")
+
+    return FileResponse(
+        path=safe_path,
+        filename=safe_path.name,
+        media_type=content_type,
+    )
+
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """Upload a scan or document file directly into the backend workspace/ directory.
-
-    Allows the frontend to send raw files (PNG, JPG, PDF, SVG, TXT) so on-device OCR
-    and document tools can process them.
-    """
+    """Upload a scan or document file directly into the backend workspace/ directory."""
     filename = file.filename or "uploaded_file"
     safe_path = _resolve_safe(filename)
     if safe_path is None:
@@ -81,12 +124,6 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/network-status")
 def network_status():
-    """Current network counters for the live frontend panel.
-
-    Single reading of cumulative system-wide bytes; the Next.js frontend
-    polls this and diffs consecutive responses to display per-second
-    activity.
-    """
     return get_network_stats()
 
 
@@ -128,12 +165,6 @@ def route(body: RouteRequest):
 
 @app.post("/agent/run")
 def agent_run(body: AgentRunRequest):
-    """Run the full agent loop (plan -> tools -> answer) on a goal.
-
-    run_agent() itself never raises (it returns partial results even on a
-    model outage), so this try/except guards against unexpected failures
-    in the loop's dependencies.
-    """
     if not body.goal or not body.goal.strip():
         raise HTTPException(
             status_code=400,
@@ -150,24 +181,11 @@ def agent_run(body: AgentRunRequest):
 
 
 def _sse_event(payload: dict) -> str:
-    """Format a dict as a Server-Sent Events data frame.
-
-    SSE framing is `data: <json>\n\n`; a comment keepalive (`: ping`) is
-    interleaved so proxies/browsers don't close an idle connection while
-    a model call is in flight.
-    """
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
 @app.post("/agent/run/stream")
 def agent_run_stream(body: AgentRunRequest):
-    """Stream the agent loop as Server-Sent Events, one event per phase.
-
-    The client receives events incrementally: plan_ready first, then
-    step_start/step_complete pairs as each step runs, and a final done
-    event with the full result dict. Strictly localhost traffic - the
-    generator itself never makes external network calls.
-    """
     if not body.goal or not body.goal.strip():
         raise HTTPException(
             status_code=400,
@@ -178,9 +196,6 @@ def agent_run_stream(body: AgentRunRequest):
         try:
             for payload in run_agent_stream(body.goal.strip()):
                 yield _sse_event(payload)
-                # Keepalive between events: each step involves a model
-                # call that can take many seconds, and an SSE client must
-                # not see a fully idle connection.
                 yield ": ping\n\n"
         except Exception as exc:
             yield _sse_event(
@@ -210,5 +225,4 @@ def routing_log():
             if line:
                 decisions.append(json.loads(line))
 
-    # Most recent first.
     return list(reversed(decisions))

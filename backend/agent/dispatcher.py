@@ -71,10 +71,9 @@ def dispatch_tool_call(parsed_response: dict) -> dict:
     tool_input = parsed_response.get("tool_input", {})
 
     # The model sometimes emits tool_input as a bare string or list instead
-    # of a dict. Normalize it: anything non-dict is passed positionally so
-    # the tool still gets the value instead of a TypeError from **unpacking.
+    # of a dict. Normalize it so tools (like code_execute) receive populated keys.
     if not isinstance(tool_input, dict):
-        tool_input = {"value": tool_input}
+        tool_input = {"code": str(tool_input or ""), "value": str(tool_input or "")}
 
     tool_func = TOOL_REGISTRY.get(tool_name)
     if tool_func is None:
@@ -86,11 +85,18 @@ def dispatch_tool_call(parsed_response: dict) -> dict:
     # The small model sometimes leaks schema keys (like "reasoning") into
     # tool_input. Filter to the parameters the tool function actually
     # accepts, so a stray key becomes a no-op instead of a TypeError.
+    # If the function accepts **kwargs (e.g. code_execute), preserve kwargs aliases.
     try:
-        accepted = set(inspect.signature(tool_func).parameters)
+        sig = inspect.signature(tool_func)
+        accepted = set(sig.parameters)
+        has_kwargs = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        )
     except (TypeError, ValueError):
         accepted = None
-    if accepted is not None and isinstance(tool_input, dict):
+        has_kwargs = False
+
+    if accepted is not None and isinstance(tool_input, dict) and not has_kwargs:
         tool_input = {k: v for k, v in tool_input.items() if k in accepted}
 
     try:

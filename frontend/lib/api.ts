@@ -287,3 +287,8 @@ export async function runAgentStream(
     throw new ApiError("Connection to the agent stream was lost.");
   }
 }
+
+/** Get full URL to download a generated file from the backend workspace. */
+export function getDownloadUrl(filename: string): string {
+  return `${BACKEND_URL}/download/${encodeURIComponent(filename)}`;
+}

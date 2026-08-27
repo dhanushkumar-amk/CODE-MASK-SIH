@@ -163,7 +163,8 @@ def xlsx_generate(title: str, headers: list, rows: list, filename: str = None) -
     else:
         filename = str(filename)
 
-    if not filename.lower().endswith(".xlsx"):
+    is_csv = str(filename).lower().endswith(".csv")
+    if not is_csv and not filename.lower().endswith(".xlsx"):
         filename += ".xlsx"
 
     # Reuse file_tools' sandbox: same workspace root, same traversal
@@ -183,6 +184,20 @@ def xlsx_generate(title: str, headers: list, rows: list, filename: str = None) -
         )
 
     try:
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+        if is_csv:
+            import csv
+            with open(safe_path, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(headers)
+                for r in normalized_rows:
+                    writer.writerow(r)
+            return {
+                "status": "success",
+                "output": f"CSV file saved as {filename}",
+                "file_path": str(safe_path),
+            }
+
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = title.strip()[:MAX_SHEET_TITLE]
@@ -207,7 +222,6 @@ def xlsx_generate(title: str, headers: list, rows: list, filename: str = None) -
                 longest + 2, 50
             )
 
-        safe_path.parent.mkdir(parents=True, exist_ok=True)
         workbook.save(str(safe_path))
     except OSError as exc:
         return {"status": "error", "output": f"Could not save spreadsheet: {exc}"}

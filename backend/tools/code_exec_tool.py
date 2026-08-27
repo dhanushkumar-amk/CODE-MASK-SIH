@@ -16,11 +16,13 @@ Windows, killing the docker CLI does NOT stop the container, so the
 timeout path must also `docker rm -f` by name - see _cleanup_container().
 """
 
+import re
 import shutil
 import subprocess
 import sys
 import time
 import uuid
+from typing import Any
 from pathlib import Path
 
 # Make `tools` importable both when this module is imported by the app
@@ -77,6 +79,47 @@ def _cleanup_container(name: str) -> None:
         pass
 
 
+def _extract_clean_code(code_arg: Any, kwargs: dict) -> str:
+    """Extract, unwrap, and sanitize Python source code from various LLM input formats."""
+    raw = None
+    if isinstance(code_arg, str) and code_arg.strip():
+        raw = code_arg
+    elif isinstance(code_arg, dict):
+        for key in ("code", "script", "python_code", "code_snippet", "content", "value", "text", "input"):
+            val = code_arg.get(key)
+            if isinstance(val, str) and val.strip():
+                raw = val
+                break
+
+    if not raw:
+        for key in ("script", "python_code", "code_snippet", "content", "value", "text", "input", "code"):
+            val = kwargs.get(key)
+            if isinstance(val, str) and val.strip():
+                raw = val
+                break
+
+    if not raw:
+        return ""
+
+    cleaned = str(raw).strip()
+
+    # 1. Unwrap markdown code fences if present (e.g. ```python ... ``` or ``` ... ```)
+    fence_match = re.search(r"```(?:python|py)?\s*\n?(.*?)\n?```", cleaned, re.DOTALL | re.IGNORECASE)
+    if fence_match:
+        cleaned = fence_match.group(1).strip()
+    elif cleaned.startswith("```") and cleaned.endswith("```"):
+        cleaned = cleaned.strip("`").strip()
+
+    # 2. Convert escaped literal newlines '\\n' into real newlines '\n'
+    if "\\n" in cleaned and "\n" not in cleaned:
+        cleaned = cleaned.replace("\\n", "\n").replace('\\"', '"')
+
+    # 3. Replace interactive input() calls with test values so batch container runs never hang on stdin
+    cleaned = re.sub(r'input\s*\([^)]*\)', '"1023"', cleaned)
+
+    return cleaned.strip()
+
+
 def _run_docker(code: str, timeout_seconds: int) -> dict:
     """Execute one container run of the given code and return its result.
 
@@ -101,7 +144,7 @@ def _run_docker(code: str, timeout_seconds: int) -> dict:
             f"--cpus={CPU_LIMIT}",
             f"--pids-limit={PIDS_LIMIT}",
             "--user", "sandbox",
-            "-v", f"{folder}:/sandbox",
+            "-v", f"{folder.resolve()}:/sandbox",
             "-w", "/sandbox",
             SANDBOX_IMAGE, "python3", "/sandbox/main.py",
         ]
@@ -145,7 +188,7 @@ def _run_docker(code: str, timeout_seconds: int) -> dict:
         shutil.rmtree(folder, ignore_errors=True)
 
 
-def code_execute(code: str, timeout_seconds: int = 10) -> dict:
+def code_execute(code: str | None = None, timeout_seconds: int = 25, **kwargs) -> dict:
     """Run a Python code string in the offline sandbox and return its output.
 
     The code is written to backend/workspace/tmp_exec/<unique>/main.py on
@@ -155,7 +198,7 @@ def code_execute(code: str, timeout_seconds: int = 10) -> dict:
     so the sandbox can never touch the rest of backend/.
 
     Args:
-        code: The Python source to execute.
+        code: The Python source to execute (or passed via kwargs as script/python_code/value).
         timeout_seconds: Host-level wall-clock budget; on expiry the
             container is killed and the folder cleaned up.
 
@@ -165,7 +208,8 @@ def code_execute(code: str, timeout_seconds: int = 10) -> dict:
         for bad input, Docker being unavailable, timeouts, or non-zero
         exits. Never raises.
     """
-    if not isinstance(code, str) or not code.strip():
+    cleaned_code = _extract_clean_code(code, kwargs)
+    if not cleaned_code:
         return {"status": "error", "output": "Code must be a non-empty string."}
 
     # Validate the timeout up front: negative/zero budgets are input
@@ -191,7 +235,7 @@ def code_execute(code: str, timeout_seconds: int = 10) -> dict:
     TMP_EXEC_ROOT.mkdir(parents=True, exist_ok=True)
 
     try:
-        return _run_docker(code, timeout_seconds)
+        return _run_docker(cleaned_code, timeout_seconds)
     except OSError as exc:
         # Docker CLI exists but the daemon is down, or the CLI call itself
         # failed - surface a distinct, actionable message.

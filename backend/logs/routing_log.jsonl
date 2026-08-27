@@ -33,3 +33,37 @@
 {"task": "what is each layer prepare explian", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T18:52:02.071607"}
 {"task": "anaysis image (attached scan: diagram-export-25-08-2026-19_04_30.svg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:01:15.004357"}
 {"task": "anaysis image (attached scan: diagram-export-25-08-2026-19_04_30.svg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:08:15.083721"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:48:06.517756"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:48:17.549995"}
+{"task": "explain the ai engineer sylabus (attached scan: AIML_Engineer_Beginner_Syllabus.pdf)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:49:28.458031"}
+{"task": "explain the ai engineer sylabus (attached scan: AIML_Engineer_Beginner_Syllabus.pdf)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:52:57.745288"}
+{"task": "tell what is this text in the image (attached scan: download.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:54:57.068290"}
+{"task": "tell what is this text in the image (attached scan: download.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T19:59:49.363335"}
+{"task": "tell what is this text in the image (attached scan: download.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:03:38.142471"}
+{"task": "tell what is this text in the image (attached scan: download.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:06:00.002407"}
+{"task": "tell what is this text in the image (attached scan: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:08:18.986870"}
+{"task": "tell what is this text in the image (attached scan: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:13:12.875852"}
+{"task": "tell what is this text in the image (attached scan: download (1).jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:14:31.531035"}
+{"task": "tell what is this text in the image (attached scan: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:15:13.708900"}
+{"task": "write the java program for palindrome program in given string", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:16:29.047428"}
+{"task": "write the java program for palindrome program in given string", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:21:37.185425"}
+{"task": "write the java program for duck number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:23:34.952012"}
+{"task": "write the java program for duck number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:26:03.048392"}
+{"task": "write the java program for duck number simple number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:29:16.764679"}
+{"task": "write the java program for duck number simple number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:31:23.483543"}
+{"task": "write the java program for duck number simple number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T20:54:18.418025"}
+{"task": "write the java program for duck number simple number and run the code", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:13:53.924402"}
+{"task": "write the java program for duck number simple number and run the code", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:20:03.793393"}
+{"task": "write the js program for an amstrong number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:22:02.142820"}
+{"task": "write the js program for an amstrong number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:26:32.397030"}
+{"task": "write the js code for palindrome and run", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:29:59.447318"}
+{"task": "write the simple javascript code to perform arthemetic operation", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:41:06.631323"}
+{"task": "write the simple javascript code to perform the given numbe ris amstrong number or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:42:03.243990"}
+{"task": "write the simple javascript code to perform the given numbe ris amstrong number or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:47:00.052445"}
+{"task": "write the java program for amstrong number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:52:14.280223"}
+{"task": "what is docker", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:53:47.975781"}
+{"task": "extract the content on the image (attached scan: 1000132924.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T21:54:59.688355"}
+{"task": "what the csv file present (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:06:25.103043"}
+{"task": "what the csv file present (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:07:05.745151"}
+{"task": "what the csv file present (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:07:37.841637"}
+{"task": "what the csv file present (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:09:43.037010"}

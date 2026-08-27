@@ -175,11 +175,11 @@ def build_system_prompt() -> str:
         "MUST call pptx_generate. If it asks for a spreadsheet, MUST call "
         "xlsx_generate. If it asks to read a scanned image or PDF, MUST "
         "call ocr_extract_image or ocr_extract_pdf first.\n"
-        "2. Use final_answer only when no tool is needed, or after the "
-        "required tool has run.\n"
-        "3. tool_name must be exactly one of the tools above.\n"
-        "4. tool_input must use the exact parameter names shown.\n"
-        "5. Output ONLY the JSON object. No markdown, no extra text.\n"
+        "2. If the goal asks to write code, write a program (Java, Python, C++, etc.), or answer a question without explicitly asking to execute a script, you MUST use final_answer immediately. Do NOT call code_execute.\n"
+        "3. Use code_execute ONLY when the prompt explicitly asks to run/execute a Python script.\n"
+        "4. tool_name must be exactly one of the tools above.\n"
+        "5. tool_input must use the exact parameter names shown.\n"
+        "6. Output ONLY the JSON object. No markdown, no extra text.\n"
     )
 
 

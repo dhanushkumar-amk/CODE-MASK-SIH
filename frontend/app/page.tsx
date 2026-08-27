@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import ExecutionTrace from "@/app/components/ExecutionTrace";
 import TaskInput from "@/app/components/TaskInput";
-import type { AgentRunResult, AgentStreamEvent } from "@/lib/api";
+import { runAgentStream, type AgentRunResult, type AgentStreamEvent } from "@/lib/api";
 
 export default function Home() {
   // Built incrementally from /agent/run/stream events: plan_ready seeds
@@ -50,12 +50,23 @@ export default function Home() {
     }
   };
 
+  const handleRunGoal = async (goal: string) => {
+    setIsStreaming(true);
+    try {
+      await runAgentStream(goal, handleAgentEvent);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
   return (
     <>
       <TaskInput onAgentEvent={handleAgentEvent} />
       {agentResult && (
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-6 pb-16">
-          <ExecutionTrace result={agentResult} isStreaming={isStreaming} />
+          <ExecutionTrace result={agentResult} isStreaming={isStreaming} onRunGoal={handleRunGoal} />
         </div>
       )}
     </>

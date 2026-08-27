@@ -58,10 +58,17 @@ def file_read(path: str) -> dict:
             "output": f"Path rejected (must stay inside the workspace): {path!r}",
         }
 
+    # Fallback to case-insensitive or name match inside WORKSPACE_DIR if safe_path doesn't exist
+    if not safe_path.exists():
+        target_name = Path(path).name.lower()
+        matching = [p for p in WORKSPACE_DIR.iterdir() if p.is_file() and p.name.lower() == target_name]
+        if matching:
+            safe_path = matching[0]
+
     try:
         content = safe_path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return {"status": "error", "output": f"File not found: {path}"}
+        return {"status": "error", "output": f"File not found in workspace: {path}"}
     except (OSError, UnicodeDecodeError) as exc:
         return {"status": "error", "output": f"Could not read {path}: {exc}"}
 
