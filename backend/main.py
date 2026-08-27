@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from agent.ollama_client import OllamaError, call_model
+from agent.agent_loop import run_agent
 from config import DEFAULT_MODEL
 from monitor.network_monitor import get_network_stats
 from router.router import LOG_FILE, route_task
@@ -34,6 +35,10 @@ class GenerateResponse(BaseModel):
 
 class RouteRequest(BaseModel):
     task: str | None = None
+
+
+class AgentRunRequest(BaseModel):
+    goal: str | None = None
 
 
 @app.get("/health")
@@ -85,6 +90,29 @@ def route(body: RouteRequest):
         raise HTTPException(
             status_code=500,
             detail="Routing failed due to an internal error",
+        )
+
+
+@app.post("/agent/run")
+def agent_run(body: AgentRunRequest):
+    """Run the full agent loop (plan -> tools -> answer) on a goal.
+
+    run_agent() itself never raises (it returns partial results even on a
+    model outage), so this try/except guards against unexpected failures
+    in the loop's dependencies.
+    """
+    if not body.goal or not body.goal.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Missing or empty 'goal' field in request body",
+        )
+
+    try:
+        return run_agent(body.goal.strip())
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Agent run failed: {exc}",
         )
 
 
