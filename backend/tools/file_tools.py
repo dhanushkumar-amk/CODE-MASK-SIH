@@ -65,6 +65,21 @@ def file_read(path: str) -> dict:
         if matching:
             safe_path = matching[0]
 
+    # Automatic routing for binary PDF and Image files to prevent UTF-8 decode errors
+    ext = safe_path.suffix.lower() if safe_path.exists() else Path(path).suffix.lower()
+    if ext == ".pdf":
+        try:
+            from ocr.ocr_tools import extract_text_from_pdf
+            return extract_text_from_pdf(pdf_path=str(safe_path if safe_path.exists() else path))
+        except Exception as exc:
+            return {"status": "error", "output": f"Could not extract PDF text: {exc}"}
+    elif ext in (".png", ".jpg", ".jpeg", ".svg"):
+        try:
+            from ocr.ocr_tools import extract_text_from_image
+            return extract_text_from_image(image_path=str(safe_path if safe_path.exists() else path))
+        except Exception as exc:
+            return {"status": "error", "output": f"Could not extract image text: {exc}"}
+
     try:
         content = safe_path.read_text(encoding="utf-8")
     except FileNotFoundError:

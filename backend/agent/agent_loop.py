@@ -233,26 +233,39 @@ def _step_tool_hint(step: str) -> str | None:
 
 
 def _goal_aware_hint(step: str, goal: str) -> str | None:
-    """Resolve a step's tool hint, letting an explicit execution or read goal override."""
-    lowered_goal = goal.lower()
+    """Resolve a step's tool hint, letting file extension, execution, or read goals override."""
+    combined = f"{goal} {step}".lower()
 
-    # Priority 1: If goal is an explicit read/extract request for an attached file, force file_read!
-    if any(read_kw in lowered_goal for read_kw in ("read", "extract", "content", "what is", "view", "open", "attached file")):
-        if any(ext in lowered_goal for ext in (".csv", "csv", ".txt", ".json", ".docx", ".xlsx")):
-            if not any(gen_kw in lowered_goal for gen_kw in ("create", "generate", "make a new", "write a new", "export to")):
+    # Priority 1: Check attached file extension in prompt/step!
+    file_match = re.search(
+        r"([a-zA-Z0-9_\-()\s]+\.(?:pdf|png|jpg|jpeg|svg|csv|xlsx|docx|pptx|txt|json))",
+        combined,
+        re.IGNORECASE,
+    )
+    if file_match:
+        ext = Path(file_match.group(1)).suffix.lower()
+        if ext == ".pdf":
+            return "ocr_extract_pdf"
+        elif ext in (".png", ".jpg", ".jpeg", ".svg"):
+            return "ocr_extract_image"
+
+    # Priority 2: If goal is an explicit read/extract request for a text/csv file, force file_read!
+    if any(read_kw in combined for read_kw in ("read", "extract", "content", "what is", "view", "open", "skills", "resume", "attached file")):
+        if any(ext in combined for ext in (".csv", "csv", ".txt", ".json", ".docx", ".xlsx")):
+            if not any(gen_kw in combined for gen_kw in ("create", "generate", "make a new", "write a new", "export to")):
                 return "file_read"
 
     hint = _step_tool_hint(step)
     if hint is None or hint in ("calculator", "xlsx_generate", "docx_generate", "pptx_generate"):
         goal_hint = _step_tool_hint(goal)
         if goal_hint == "code_execute":
-            if any(run_kw in lowered_goal for run_kw in ("and run", "run code", "run the code", "execute", "run python", "run program")):
+            if any(run_kw in combined for run_kw in ("and run", "run code", "run the code", "execute", "run python", "run program")):
                 return "code_execute"
-            if any(lang in lowered_goal for lang in ("java", "c++", "c#", "rust", "javascript", "typescript", "html", "css", "sql")):
+            if any(lang in combined for lang in ("java", "c++", "c#", "rust", "javascript", "typescript", "html", "css", "sql")):
                 return None
             return goal_hint
-        if goal_hint == "file_read":
-            return "file_read"
+        if goal_hint in ("file_read", "ocr_extract_pdf", "ocr_extract_image"):
+            return goal_hint
     return hint
 
 
@@ -436,24 +449,35 @@ def run_agent_stream(goal: str, max_steps: int = 6):
                 tool_inp = parsed.get("tool_input")
 
                 # Normalize tool_input to a dict so key assignments and tool extraction never raise TypeError
-                if tool_name == "file_read":
+                if not isinstance(tool_inp, dict):
+                    tool_inp = {"path": str(tool_inp or ""), "pdf_path": str(tool_inp or ""), "image_path": str(tool_inp or ""), "value": str(tool_inp or "")}
+                    parsed["tool_input"] = tool_inp
+
+                if tool_name in ("file_read", "ocr_extract_pdf", "ocr_extract_image"):
                     path_val = (
-                        tool_inp.get("path")
+                        tool_inp.get("pdf_path")
+                        or tool_inp.get("image_path")
+                        or tool_inp.get("path")
                         or tool_inp.get("filename")
                         or tool_inp.get("file")
                         or tool_inp.get("value")
                         or ""
                     )
-                    if not path_val or not str(path_val).strip() or str(path_val).strip() in ("file", "path"):
+                    if not path_val or not str(path_val).strip() or str(path_val).strip() in ("file", "path", "pdf", "image"):
                         file_match = re.search(
-                            r"([a-zA-Z0-9_\-]+\.(?:csv|xlsx|docx|pptx|pdf|txt|json|png|jpg|jpeg))",
+                            r"([a-zA-Z0-9_\-()\s]+\.(?:pdf|png|jpg|jpeg|svg|csv|xlsx|docx|pptx|txt|json))",
                             f"{goal} {step}",
                             re.IGNORECASE,
                         )
                         if file_match:
-                            path_val = file_match.group(1)
+                            path_val = file_match.group(1).strip()
                     if path_val and isinstance(parsed.get("tool_input"), dict):
-                        parsed["tool_input"]["path"] = str(path_val)
+                        if tool_name == "ocr_extract_pdf":
+                            parsed["tool_input"]["pdf_path"] = str(path_val)
+                        elif tool_name == "ocr_extract_image":
+                            parsed["tool_input"]["image_path"] = str(path_val)
+                        else:
+                            parsed["tool_input"]["path"] = str(path_val)
 
                 # Guard against running non-Python code (e.g. Java, C++) in the Python Docker sandbox:
                 if tool_name == "code_execute":
