@@ -30,10 +30,10 @@ export default function NetworkStatusBadge({ className }: { className?: string }
   return (
     <Badge
       variant="outline"
-      className={`border-[#2A2C34] bg-[#16171D] text-white font-mono text-[11px] flex items-center gap-2 px-3 py-1 rounded-full shadow-xs uppercase tracking-wider ${className ?? ""}`}
+      className={`border-blue-200/80 bg-blue-50/50 text-slate-900 font-mono text-[11px] flex items-center gap-2 px-3 py-1 rounded-full shadow-2xs uppercase tracking-wider ${className ?? ""}`}
     >
-      <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-400 animate-pulse-dot" : "bg-slate-500"}`} />
-      <span className="font-semibold text-slate-200">{isOnline ? "AIR-GAPPED" : "LOCAL HOST"} — {kbRate} KB/s</span>
+      <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse-live" : "bg-slate-400"}`} />
+      <span className="font-semibold text-slate-900">{isOnline ? "AIR-GAPPED" : "LOCAL HOST"} — {kbRate} KB/s</span>
     </Badge>
   );
 }

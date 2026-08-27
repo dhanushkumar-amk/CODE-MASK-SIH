@@ -18,27 +18,30 @@ export default function ExecutionTrace({
   const steps = result.results ?? [];
 
   return (
-    <div className="w-full flex flex-col gap-4 font-mono text-xs">
-      <div className="flex items-center justify-between border-b border-[#26272D] pb-3">
-        <span className="font-bold tracking-wider text-white uppercase text-xs flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-white" />
-          EXECUTION TRACE // STEP-BY-STEP AGENT LOOP
+    <div className="w-full flex flex-col gap-4 font-sans text-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <span className="font-extrabold tracking-wider text-slate-900 uppercase text-xs flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-xs shadow-blue-500/50" />
+          EXECUTION TRACE <span className="text-blue-600">//</span> STEP-BY-STEP AGENT LOOP
         </span>
-        <Badge variant="outline" className="text-[10px] border-[#2E303A] font-mono bg-[#181920] text-[#E2E8F0]">
+        <Badge
+          variant="outline"
+          className="text-[10px] border-blue-200 font-mono text-blue-700 bg-blue-50/80 font-bold px-3 py-0.5 rounded-full"
+        >
           {isStreaming ? "[STREAMING...]" : result.completed ? "[COMPLETED]" : "[IN PROGRESS]"}
         </Badge>
       </div>
 
       <ScrollArea className="w-full max-h-[520px] pr-3">
-        <div className="relative flex flex-col gap-4 pl-4 border-l border-[#26272D] my-2">
+        <div className="relative flex flex-col gap-4 pl-5 border-l-2 border-blue-200/80 my-2 ml-2">
           {steps.map((step, idx) => (
             <StepRow key={idx} step={step} stepNumber={idx + 1} />
           ))}
 
           {isStreaming && steps.length === 0 && (
-            <div className="p-4 rounded-xl border border-[#26272D] bg-[#121318] text-[#8A8F98] font-mono text-xs flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-dot" />
-              <span>[INITIALIZING AGENT REASONING ENGINE...]</span>
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60 text-blue-800 font-mono text-xs flex items-center gap-2.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse-live" />
+              <span>[INITIALIZING FORTEXA REASONING ENGINE...]</span>
             </div>
           )}
         </div>
@@ -50,88 +53,80 @@ export default function ExecutionTrace({
 function StepRow({ step, stepNumber }: { step: AgentStep; stepNumber: number }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Shape-based status indicator (Strict: NO COLORED ICONS!)
   const renderStatusShape = () => {
     if (step.status === "done") {
-      return <span className="h-2.5 w-2.5 shrink-0 bg-white rounded-xs" title="DONE" />;
+      return <span className="h-2.5 w-2.5 shrink-0 bg-blue-600 rounded-xs shadow-xs" title="DONE" />;
     } else if (step.status === "failed") {
-      return <span className="font-mono font-bold text-xs leading-none text-white" title="FAILED">✕</span>;
+      return <span className="font-mono font-bold text-xs leading-none text-red-600" title="FAILED">✕</span>;
     } else {
-      return <span className="h-2.5 w-2.5 shrink-0 border border-white bg-transparent animate-pulse-dot rounded-xs" title="PENDING" />;
+      return <span className="h-2.5 w-2.5 shrink-0 border-2 border-blue-600 bg-white animate-pulse-live rounded-xs" title="PENDING" />;
     }
   };
 
   const hasDetails = step.tool_input || step.output || step.reasoning;
 
   return (
-    <Card className="relative w-full border-[#26272D] bg-[#14151A] p-4 shadow-lg shadow-black/40 rounded-xl transition-all duration-200 animate-in fade-in slide-in-from-bottom-1">
+    <Card className="relative w-full border-blue-100/90 bg-white p-4.5 shadow-xs rounded-xl transition-all duration-200 hover:border-blue-300">
       {/* Left connector marker dot on timeline */}
-      <span className="absolute -left-[21px] top-4.5 h-2.5 w-2.5 rounded-full border border-[#3A3C46] bg-[#14151A]" />
+      <span className="absolute -left-[27px] top-5 h-3 w-3 rounded-full border-2 border-blue-600 bg-white shadow-xs" />
 
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              {/* Shape Status Indicator */}
               {renderStatusShape()}
 
-              {/* Mono Step Number */}
-              <span className="font-bold text-white uppercase text-xs shrink-0">
+              <span className="font-bold font-mono text-slate-900 uppercase text-xs shrink-0">
                 STEP {stepNumber.toString().padStart(2, "0")}
               </span>
 
-              {/* Tool or action label */}
               {step.tool_name && (
-                <Badge variant="secondary" className="text-[9px] py-0 px-2 border-[#2E303A] bg-[#1E1F26] font-mono text-[#E2E8F0] shrink-0">
+                <Badge variant="secondary" className="text-[10px] py-0.5 px-2.5 border-blue-200 bg-blue-50 font-mono text-blue-700 font-bold shrink-0 rounded-full">
                   TOOL: {step.tool_name}
                 </Badge>
               )}
             </div>
 
-            {/* Collapsible trigger arrow */}
             {hasDetails && (
-              <CollapsibleTrigger className="p-1.5 rounded-lg hover:bg-[#1E1F26] transition-colors">
+              <CollapsibleTrigger className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors">
                 {isOpen ? (
-                  <ChevronDown className="h-4 w-4 text-white" />
+                  <ChevronDown className="h-4 w-4" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-white" />
+                  <ChevronRight className="h-4 w-4" />
                 )}
               </CollapsibleTrigger>
             )}
           </div>
 
-          {/* User-facing description in clean sans font */}
-          <div className="font-sans text-xs text-[#E2E8F0] leading-relaxed font-medium pl-5">
+          <div className="font-sans text-xs text-slate-800 leading-relaxed font-medium pl-5">
             {step.step}
           </div>
 
-          {/* Reasoning summary if available */}
           {step.reasoning && (
-            <div className="font-sans text-[11px] text-[#8A8F98] italic pl-5">
+            <div className="font-sans text-[11px] text-slate-500 italic pl-5">
               Reasoning: {step.reasoning}
             </div>
           )}
 
-          {/* Expandable Section with Raw Tool Input & Output */}
-          <CollapsibleContent className="mt-2 pt-2 border-t border-[#1F2026] pl-5">
-            <div className="flex flex-col gap-3 font-mono text-[11px] bg-[#0E0F13] p-3.5 rounded-xl border border-[#26272D]">
+          <CollapsibleContent className="mt-2 pt-2 border-t border-slate-100 pl-5">
+            <div className="flex flex-col gap-3 font-mono text-[11px] bg-slate-900 p-4 rounded-xl text-slate-100 border border-slate-800">
               {step.tool_input && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-[#8A8F98] uppercase">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
                     RAW TOOL INPUT:
                   </span>
-                  <pre className="overflow-x-auto bg-[#14151A] p-2.5 rounded-lg border border-[#26272D] text-white leading-tight">
+                  <pre className="overflow-x-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-blue-200 leading-tight">
                     <code>{JSON.stringify(step.tool_input, null, 2)}</code>
                   </pre>
                 </div>
               )}
 
               {step.output && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-[#8A8F98] uppercase">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
                     RAW TOOL OUTPUT:
                   </span>
-                  <pre className="overflow-x-auto bg-[#14151A] p-2.5 rounded-lg border border-[#26272D] text-white leading-tight whitespace-pre-wrap max-h-48">
+                  <pre className="overflow-x-auto bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-200 leading-tight whitespace-pre-wrap max-h-48">
                     <code>{step.output}</code>
                   </pre>
                 </div>
@@ -143,3 +138,4 @@ function StepRow({ step, stepNumber }: { step: AgentStep; stepNumber: number }) 
     </Card>
   );
 }
+

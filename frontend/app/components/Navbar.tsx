@@ -1,77 +1,50 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import NetworkStatusBadge from "@/app/components/NetworkStatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, Cpu } from "lucide-react";
 
 export default function Navbar({
-  onLaunchClick,
+  onResetConsole,
 }: {
-  onLaunchClick?: () => void;
+  onResetConsole?: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#08090A]/80 backdrop-blur-md shadow-xs">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        {/* Left: Logo Wordmark & Live Pill */}
+    <header className="sticky top-0 z-50 w-full border-b border-blue-100/80 bg-white/80 backdrop-blur-xl shadow-xs">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        {/* Brand Logo */}
         <div className="flex items-center gap-3">
           <a
             href="#"
-            className="flex items-center gap-2 font-mono text-sm font-bold tracking-tight text-white hover:opacity-80 transition-opacity"
+            onClick={onResetConsole}
+            className="flex items-center gap-2.5 font-sans text-sm font-bold tracking-tight text-slate-900 hover:opacity-90 transition-opacity group"
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-white" />
-            <span>SOVEREIGN WORKBENCH</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform">
+              F
+            </div>
+            <span className="font-extrabold tracking-tight text-slate-900 text-base">
+              FORTEXA <span className="text-blue-600 font-medium text-xs">AI</span>
+            </span>
           </a>
-          <Badge variant="secondary" className="hidden sm:inline-flex bg-[#16171E] text-emerald-400 border-emerald-500/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-dot" />
-            OFFLINE v1.0
+          <Badge
+            variant="secondary"
+            className="hidden sm:inline-flex bg-blue-50 text-blue-700 border-blue-200/80 font-medium text-[10px] py-0.5 px-2.5 rounded-full"
+          >
+            <ShieldCheck className="h-3 w-3 text-blue-600 mr-1" />
+            AIR-GAPPED v1.0
           </Badge>
         </div>
 
-        {/* Center: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 font-sans text-xs font-semibold text-[#8A8F98]">
-          <a
-            href="#how-it-works"
-            className="px-3 py-1.5 rounded-lg hover:bg-[#181920] hover:text-white transition-colors"
-          >
-            How It Works
-          </a>
-          <a
-            href="#problem"
-            className="px-3 py-1.5 rounded-lg hover:bg-[#181920] hover:text-white transition-colors"
-          >
-            Problem
-          </a>
-          <a
-            href="#proof"
-            className="px-3 py-1.5 rounded-lg hover:bg-[#181920] hover:text-white transition-colors"
-          >
-            Proof
-          </a>
-          <a
-            href="#workbench"
-            className="px-3 py-1.5 rounded-lg hover:bg-[#181920] hover:text-white transition-colors"
-          >
-            Console Demo
-          </a>
-        </nav>
-
-        {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLaunchClick}
-            className="hidden sm:inline-flex border-[#26272D] bg-[#14151A] text-white hover:bg-[#1C1D24]"
-          >
-            Launch Console
-          </Button>
-          <a
-            href="mailto:contact@sovereign-ai.local?subject=Sovereign%20Workbench%20Demo%20Request"
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            Request Demo
-          </a>
+        {/* Center/Right Status & Model Selector */}
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-slate-200/80 bg-slate-50/90 px-3.5 py-1 font-mono text-[11px] text-slate-700 shadow-2xs">
+            <Cpu className="h-3.5 w-3.5 text-blue-600" />
+            <span className="font-semibold text-slate-900">qwen2.5:1.5b-instruct</span>
+          </div>
+          <NetworkStatusBadge />
         </div>
       </div>
     </header>
   );
 }
+

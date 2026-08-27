@@ -75,3 +75,5 @@
 {"task": "what is api and its types", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:45:34.238007"}
 {"task": "what is api and its types", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:47:39.888476"}
 {"task": "what is llm", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:49:36.924109"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T23:31:24.055666"}
+{"task": "write the simple rust code for me creating file handlinh", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T23:38:01.686217"}

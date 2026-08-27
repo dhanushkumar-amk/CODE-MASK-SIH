@@ -3,38 +3,38 @@
 @import "shadcn/tailwind.css";
 
 /*
- * LINEAR-STYLE PREMIUM DARK THEME DESIGN SYSTEM
- * Deep Obsidian (#08090A), Card Surface (#14151A), Hairline Borders (#26272D), High-Contrast Pure White (#FFFFFF)
+ * FORTEXA MODERN SHADCN BLUE DESIGN SYSTEM
+ * Canvas (#F8FAFC), Pure White Cards (#FFFFFF), Dark Slate Text (#0F172A), Primary Royal Blue (#2563EB)
  */
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.never-dark *));
 
 @theme inline {
-  --color-background: #08090a;
-  --color-foreground: #f7f8f8;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
   --font-sans: var(--font-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
 
-  --color-ring: #ffffff;
-  --color-border: #26272d;
-  --color-input: #26272d;
+  --color-ring: #2563eb;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
 
-  --color-primary: #ffffff;
-  --color-primary-foreground: #08090a;
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #18191e;
-  --color-secondary-foreground: #f7f8f8;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
 
-  --color-muted: #121318;
-  --color-muted-foreground: #8a8f98;
+  --color-muted: #f8fafc;
+  --color-muted-foreground: #64748b;
 
-  --color-accent: #1e1f26;
-  --color-accent-foreground: #f7f8f8;
+  --color-accent: #eff6ff;
+  --color-accent-foreground: #1d4ed8;
 
-  --color-card: #14151a;
-  --color-card-foreground: #f7f8f8;
-  --color-popover: #14151a;
-  --color-popover-foreground: #f7f8f8;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -43,59 +43,61 @@
 }
 
 :root {
-  --background: #08090a;
-  --foreground: #f7f8f8;
-  --card: #14151a;
-  --card-foreground: #f7f8f8;
-  --popover: #14151a;
-  --popover-foreground: #f7f8f8;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
 
-  --primary: #ffffff;
-  --primary-foreground: #08090a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
 
-  --secondary: #18191e;
-  --secondary-foreground: #f7f8f8;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
 
-  --muted: #121318;
-  --muted-foreground: #8a8f98;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
 
-  --accent: #1e1f26;
-  --accent-foreground: #f7f8f8;
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #26272d;
-  --input: #26272d;
-  --ring: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563eb;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-/* Subtle Dark Grid Overlay */
-.bg-dark-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 24px 24px;
+/* Subtle Glowing Tech Dot Grid Background Pattern */
+.bg-tech-grid {
+  background-size: 32px 32px;
+  background-image:
+    radial-gradient(circle, rgba(37, 99, 235, 0.12) 1.5px, transparent 1.5px);
 }
 
-/* Linear Glow Effects */
-.glow-subtle {
-  box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.05);
+/* Ambient Blue Glow Overlay */
+.bg-blue-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 60%);
 }
 
-/* Smooth Pulse Animation */
-@keyframes pulse-dot {
+/* Glowing Live Status Pulse */
+@keyframes pulse-live {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
-.animate-pulse-dot {
-  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-pulse-live {
+  animation: pulse-live 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse-dot {
+  .animate-pulse-live {
     animation: none;
     opacity: 1;
   }
 }
+

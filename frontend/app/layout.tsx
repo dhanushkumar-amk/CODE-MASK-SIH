@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SOVEREIGN WORKBENCH // Industrial Offline AI",
+  title: "FORTEXA // Industrial Offline AI",
   description:
     "Self-hosted, offline AI agent system for refineries, defense, and heavy industry with zero cloud telemetry.",
 };
@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} dark h-full antialiased font-sans bg-[#08090A] text-[#F7F8F8]`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased font-sans bg-slate-50 text-slate-900`}
     >
-      <body className="min-h-full flex flex-col bg-[#08090A] text-[#F7F8F8] selection:bg-white selection:text-black">
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-600 selection:text-white">
         {children}
       </body>
     </html>

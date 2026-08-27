@@ -3,22 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-xl font-sans text-xs font-semibold tracking-wide transition-all duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-xl font-sans text-xs font-semibold tracking-wide transition-all duration-200 outline-none select-none focus-visible:ring-2 focus-visible:ring-slate-950/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-white text-black hover:bg-neutral-200 shadow-sm border border-white hover:shadow-md",
+          "bg-slate-950 text-white hover:bg-slate-800 shadow-xs border border-slate-950 hover:shadow-md",
         outline:
-          "border border-[#26272D] bg-[#14151A] text-white hover:bg-[#1C1D24] hover:border-[#383A43] shadow-xs",
+          "border border-slate-200 bg-white text-slate-950 hover:bg-slate-50 hover:border-slate-300 shadow-2xs",
         secondary:
-          "bg-[#1C1D24] text-[#E2E8F0] hover:bg-[#252730] border border-[#2A2C36]",
+          "bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-200/80",
         ghost:
-          "hover:bg-[#181920] text-[#8A8F98] hover:text-white border border-transparent",
+          "hover:bg-slate-100 text-slate-700 hover:text-slate-950 border border-transparent",
         destructive:
-          "bg-red-600 text-white hover:bg-red-700 shadow-sm",
+          "bg-red-600 text-white hover:bg-red-700 shadow-xs",
         link:
-          "text-white underline-offset-4 hover:underline",
+          "text-slate-950 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 gap-2 text-xs",
