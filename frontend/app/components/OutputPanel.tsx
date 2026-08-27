@@ -2,7 +2,21 @@
 
 import { useState } from "react";
 import { getDownloadUrl } from "@/lib/api";
-import { FileText, FileSpreadsheet, Presentation, FileCode, Download, Bot, Copy, Check } from "lucide-react";
+import { exportAsDocx, exportAsPdf, exportAsTxt, exportAsMd } from "@/lib/export";
+import {
+  FileText,
+  FileSpreadsheet,
+  Presentation,
+  FileCode,
+  Download,
+  Bot,
+  Copy,
+  Check,
+  Share2,
+  FolderOpen,
+  FileType,
+  File,
+} from "lucide-react";
 
 export default function OutputPanel({
   output,
@@ -14,6 +28,8 @@ export default function OutputPanel({
   codeResult?: string | null;
 }) {
   const [copied, setCopied] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const getFileIcon = (fname: string) => {
     const ext = fname.split(".").pop()?.toLowerCase();
@@ -27,6 +43,21 @@ export default function OutputPanel({
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = () => {
+    const textToShare = output || codeResult || filename || "";
+    navigator.clipboard.writeText(textToShare);
+    setShareToast("Copied deliverable text to clipboard!");
+    setTimeout(() => setShareToast(null), 3000);
+  };
+
+  const handleCopyLocalPath = () => {
+    if (!filename) return;
+    const localPath = `c:\\SIH 2026\\workspace\\${filename}`;
+    navigator.clipboard.writeText(localPath);
+    setShareToast(`Copied local path: ${localPath}`);
+    setTimeout(() => setShareToast(null), 3500);
   };
 
   // Detect code snippet from string content
@@ -52,7 +83,7 @@ export default function OutputPanel({
   };
 
   return (
-    <div className="w-full flex gap-3 text-slate-900 font-sans pt-1">
+    <div className="w-full flex gap-3 text-slate-900 font-sans pt-1 relative">
       {/* Bot Avatar Icon */}
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs mt-0.5">
         <Bot className="h-4.5 w-4.5" />
@@ -90,9 +121,9 @@ export default function OutputPanel({
 
         {/* Generated Workspace File Download Card */}
         {filename && (
-          <div className="w-fit border border-slate-200 bg-white p-3 rounded-xl shadow-2xs hover:border-slate-300 transition-all mt-1">
+          <div className="w-fit border border-slate-200 bg-white p-3 rounded-2xl shadow-2xs hover:border-slate-300 transition-all mt-1">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 border border-slate-200">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200">
                 {getFileIcon(filename)}
               </div>
               <div className="flex flex-col">
@@ -104,18 +135,134 @@ export default function OutputPanel({
               <a
                 href={getDownloadUrl(filename)}
                 download
-                className="ml-2 inline-flex h-8 items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 px-3.5 rounded-lg text-xs font-medium text-white transition-all shadow-2xs cursor-pointer"
+                className="ml-2 inline-flex h-8 items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 px-3.5 rounded-xl text-xs font-medium text-white transition-all shadow-2xs cursor-pointer"
               >
-                <Download className="h-3 w-3" />
+                <Download className="h-3.5 w-3.5" />
                 <span>Download</span>
               </a>
             </div>
+          </div>
+        )}
+
+        {/* ONE UNIFIED SHARE & EXPORT DROPDOWN MENU */}
+        {(displayText || displayCode || filename) && (
+          <div className="relative self-start pt-1">
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100/80 text-slate-700 border border-slate-200 px-3 py-1 rounded-xl transition-all cursor-pointer font-medium text-xs shadow-2xs hover:border-slate-300"
+            >
+              <Share2 className="h-3.5 w-3.5 text-blue-600" />
+              <span>Share & Export</span>
+            </button>
+
+            {/* Unified Popover Menu */}
+            {showExportMenu && (
+              <div className="absolute top-9 left-0 z-50 flex flex-col w-52 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-lg font-sans text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleShare();
+                    setShowExportMenu(false);
+                  }}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span>Copy Text</span>
+                </button>
+
+                {filename && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCopyLocalPath();
+                      setShowExportMenu(false);
+                    }}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                    <span>Copy Local Path</span>
+                  </button>
+                )}
+
+                <div className="h-px bg-slate-100 my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = output || codeResult || "";
+                    exportAsDocx(text, filename?.replace(/\.[^/.]+$/, "") || "fortexa_deliverable");
+                    setShareToast("Exported as Word (.docx)");
+                    setShowExportMenu(false);
+                    setTimeout(() => setShareToast(null), 3000);
+                  }}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span>Export as Word (.docx)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = output || codeResult || "";
+                    exportAsPdf(text, filename?.replace(/\.[^/.]+$/, "") || "fortexa_deliverable");
+                    setShareToast("Opening PDF Exporter...");
+                    setShowExportMenu(false);
+                    setTimeout(() => setShareToast(null), 3000);
+                  }}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileType className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                  <span>Export as PDF (.pdf)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = output || codeResult || "";
+                    exportAsTxt(text, filename?.replace(/\.[^/.]+$/, "") || "fortexa_deliverable");
+                    setShareToast("Exported as Text (.txt)");
+                    setShowExportMenu(false);
+                    setTimeout(() => setShareToast(null), 3000);
+                  }}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <File className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+                  <span>Export as Plain Text (.txt)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = output || codeResult || "";
+                    exportAsMd(text, filename?.replace(/\.[^/.]+$/, "") || "fortexa_deliverable");
+                    setShareToast("Exported as Markdown (.md)");
+                    setShowExportMenu(false);
+                    setTimeout(() => setShareToast(null), 3000);
+                  }}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                  <span>Export as Markdown (.md)</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Toast Feedback Notification */}
+        {shareToast && (
+          <div className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <Check className="h-3.5 w-3.5 text-emerald-400" />
+            <span>{shareToast}</span>
           </div>
         )}
       </div>
     </div>
   );
 }
+
 
 function HighlightedCode({ code }: { code: string }) {
   const lines = code.split("\n");

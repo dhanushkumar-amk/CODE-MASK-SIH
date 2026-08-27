@@ -95,3 +95,5 @@
 {"task": "extract sylabus (attached file: AIML_Engineer_Beginner_Syllabus.pdf)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:05:49.119543"}
 {"task": "extract the text form the image (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:07:54.244937"}
 {"task": "extract the content (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:10:07.961295"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:15:02.318419"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:24:18.787371"}

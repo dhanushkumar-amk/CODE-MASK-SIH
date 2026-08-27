@@ -5,7 +5,9 @@ import Navbar from "@/app/components/Navbar";
 import TaskInput from "@/app/components/TaskInput";
 import ExecutionTrace from "@/app/components/ExecutionTrace";
 import OutputPanel from "@/app/components/OutputPanel";
-import { User } from "lucide-react";
+import { type HistoryItem } from "@/app/components/HistoryDrawer";
+import { User, CheckCircle2, Sparkles } from "lucide-react";
+import { playCompletionChime } from "@/lib/sound";
 import {
   type AgentRunResult,
   type AgentStreamEvent,
@@ -16,7 +18,25 @@ export default function Home() {
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
   const [agentResult, setAgentResult] = useState<AgentRunResult | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [filesGenerated, setFilesGenerated] = useState(0);
+  const [showCompletionBanner, setShowCompletionBanner] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [runsMap, setRunsMap] = useState<Record<string, AgentRunResult>>({});
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedHist = localStorage.getItem("fortexa_history_items");
+      const savedMap = localStorage.getItem("fortexa_history_map");
+      if (savedHist) setHistory(JSON.parse(savedHist));
+      if (savedMap) setRunsMap(JSON.parse(savedMap));
+    } catch (e) {
+      console.warn("Failed to load session history from storage", e);
+    }
+  }, []);
 
   // Auto scroll down as new responses stream in
   useEffect(() => {
@@ -27,6 +47,7 @@ export default function Home() {
     setRouteResult(null);
     setAgentResult(null);
     setIsStreaming(false);
+    setShowCompletionBanner(false);
   };
 
   const handleRunStart = (goal: string) => {
@@ -38,10 +59,26 @@ export default function Home() {
       completed: false,
     });
     setIsStreaming(true);
+    setShowCompletionBanner(false);
   };
 
   const handleRouteReady = (route: RouteResult) => {
     setRouteResult(route);
+  };
+
+  const handleSelectHistoryRun = (item: HistoryItem) => {
+    const saved = runsMap[item.id];
+    if (saved) {
+      setAgentResult(saved);
+      setIsStreaming(false);
+    }
+  };
+
+  const handleClearHistory = () => {
+    setHistory([]);
+    setRunsMap({});
+    localStorage.removeItem("fortexa_history_items");
+    localStorage.removeItem("fortexa_history_map");
   };
 
   const handleAgentEvent = (event: AgentStreamEvent) => {
@@ -71,6 +108,49 @@ export default function Home() {
     } else if (event.event === "done") {
       setAgentResult(event);
       setIsStreaming(false);
+      
+      // Trigger Completion Audio Chime & Visual Stats
+      playCompletionChime();
+      setTasksCompleted((prev) => prev + 1);
+      setShowCompletionBanner(true);
+
+      // Check if file deliverable generated
+      let deliverableFile: string | null = null;
+      const fileStep = event.results?.find((step) => 
+        step.output?.match(/\b([\w-]+\.(pptx|docx|xlsx|csv|pdf|txt|json|py|html))\b/i) ||
+        (step.tool_input && typeof step.tool_input === "object" && "output_file" in step.tool_input)
+      );
+      if (fileStep) {
+        setFilesGenerated((prev) => prev + 1);
+        const match = fileStep.output?.match(/\b([\w-]+\.(pptx|docx|xlsx|csv|pdf|txt|json|py|html))\b/i);
+        deliverableFile = match ? match[1] : (fileStep.tool_input as { output_file?: string })?.output_file || null;
+      }
+
+      // Save to History Log
+      const runId = `run_${Date.now()}`;
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const newItem: HistoryItem = {
+        id: runId,
+        timestamp: nowStr,
+        goal: event.goal,
+        deliverableFile,
+        stepCount: event.results?.length ?? 0,
+      };
+
+      setHistory((prev) => {
+        const updated = [newItem, ...prev];
+        try { localStorage.setItem("fortexa_history_items", JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
+
+      setRunsMap((prev) => {
+        const updated = { ...prev, [runId]: event };
+        try { localStorage.setItem("fortexa_history_map", JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
+
+      // Hide completion banner after 4s
+      setTimeout(() => setShowCompletionBanner(false), 4000);
     } else if (event.event === "error") {
       setIsStreaming(false);
     }
@@ -117,8 +197,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans relative selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
-      <Navbar onResetConsole={handleResetConsole} />
+      {/* Top Header with Live KPI Counter */}
+      <Navbar
+        onResetConsole={handleResetConsole}
+        tasksCompleted={tasksCompleted}
+        filesGenerated={filesGenerated}
+        externalCalls={0}
+      />
 
       {/* Scrollable Conversation Stream Window */}
       <main className="flex-1 w-full overflow-y-auto">
@@ -186,6 +271,19 @@ export default function Home() {
           ) : (
             /* Active Conversation Stream */
             <div className="flex flex-col gap-6 pb-6 my-auto">
+              {/* Animated Task Completion Toast Banner */}
+              {showCompletionBanner && (
+                <div className="flex items-center justify-between gap-3 bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-2 duration-300 font-sans text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-white shrink-0 animate-bounce" />
+                    <span>Task Completed Successfully! Deliverable Ready.</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-700/80 px-2.5 py-0.5 rounded-full font-mono font-medium">
+                    0 External Calls
+                  </span>
+                </div>
+              )}
+
               {/* User Prompt Message Bubble */}
               <div className="flex gap-3 justify-end items-start pt-2">
                 <div className="bg-slate-200/70 text-slate-900 px-4 py-2.5 rounded-2xl rounded-tr-xs max-w-xl text-sm font-medium leading-relaxed shadow-2xs">

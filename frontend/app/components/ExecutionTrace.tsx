@@ -50,10 +50,18 @@ export default function ExecutionTrace({
               <StepRow key={idx} step={step} stepNumber={idx + 1} />
             ))}
 
-            {isStreaming && steps.length === 0 && (
-              <div className="p-3 rounded-lg border border-blue-100 bg-blue-50/50 text-blue-800 text-xs flex items-center gap-2 font-medium">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
-                <span>Initializing reasoning engine...</span>
+            {isStreaming && (
+              <div className="p-3 rounded-xl border border-blue-200/80 bg-blue-50/70 text-blue-900 text-xs flex items-center gap-3 font-medium shadow-2xs my-1 animate-pulse">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.3s]" />
+                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.15s]" />
+                  <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce" />
+                </div>
+                <span>
+                  {steps.length === 0
+                    ? "Agent is planning task steps & reasoning..."
+                    : `Agent is executing step ${steps.length + 1}...`}
+                </span>
               </div>
             )}
           </div>
