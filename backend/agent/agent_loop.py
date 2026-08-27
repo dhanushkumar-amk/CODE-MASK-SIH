@@ -233,23 +233,26 @@ def _step_tool_hint(step: str) -> str | None:
 
 
 def _goal_aware_hint(step: str, goal: str) -> str | None:
-    """Resolve a step's tool hint, letting an explicit execution goal override.
+    """Resolve a step's tool hint, letting an explicit execution or read goal override."""
+    lowered_goal = goal.lower()
 
-    A goal that explicitly asks to write and run Python code makes unanchored
-    steps a code_execute step. Non-python language requests (Java, C++, etc.)
-    or general code writing questions return None unless 'and run' is present.
-    """
+    # Priority 1: If goal is an explicit read/extract request for an attached file, force file_read!
+    if any(read_kw in lowered_goal for read_kw in ("read", "extract", "content", "what is", "view", "open", "attached file")):
+        if any(ext in lowered_goal for ext in (".csv", "csv", ".txt", ".json", ".docx", ".xlsx")):
+            if not any(gen_kw in lowered_goal for gen_kw in ("create", "generate", "make a new", "write a new", "export to")):
+                return "file_read"
+
     hint = _step_tool_hint(step)
-    if hint is None or hint == "calculator":
+    if hint is None or hint in ("calculator", "xlsx_generate", "docx_generate", "pptx_generate"):
         goal_hint = _step_tool_hint(goal)
         if goal_hint == "code_execute":
-            lowered_goal = goal.lower()
-            # If user explicitly asked to run/execute code, trigger code_execute so Docker sandbox runs!
             if any(run_kw in lowered_goal for run_kw in ("and run", "run code", "run the code", "execute", "run python", "run program")):
                 return "code_execute"
             if any(lang in lowered_goal for lang in ("java", "c++", "c#", "rust", "javascript", "typescript", "html", "css", "sql")):
                 return None
             return goal_hint
+        if goal_hint == "file_read":
+            return "file_read"
     return hint
 
 
@@ -545,20 +548,25 @@ def run_agent_stream(goal: str, max_steps: int = 6):
                 # step's wording signals a different one, execute the
                 # hinted tool deterministically instead of the echo.
                 last_tool = results[-1].get("tool_name") if results else None
-                if tool_name == last_tool:
-                    hinted = _goal_aware_hint(step, goal)
-                    if hinted and hinted != tool_name:
+                hinted = _goal_aware_hint(step, goal)
+                if hinted and (tool_name == last_tool or (tool_name in ("xlsx_generate", "docx_generate", "pptx_generate") and hinted == "file_read")):
+                    if hinted != tool_name:
                         print(
-                            f"[AGENT] WARNING: model repeated {tool_name!r} "
-                            f"but step signals {hinted!r}; using the hint."
+                            f"[AGENT] WARNING: model called {tool_name!r} "
+                            f"but step/goal signals {hinted!r}; using the hint."
                         )
                         tool_name = hinted
                         parsed["tool_name"] = hinted
-                        # The model's arguments were for the repeated tool
-                        # (e.g. OCR's image_path). Rebuild them for the
-                        # hinted tool from what the loop already knows.
                         last_output = results[-1].get("output", "") if results else ""
-                        if hinted == "docx_generate":
+                        if hinted == "file_read":
+                            file_match = re.search(
+                                r"([a-zA-Z0-9_\-]+\.(?:csv|xlsx|docx|pptx|pdf|txt|json|png|jpg|jpeg))",
+                                f"{goal} {step}",
+                                re.IGNORECASE,
+                            )
+                            path_val = file_match.group(1) if file_match else "industry.csv"
+                            parsed["tool_input"] = {"path": path_val}
+                        elif hinted == "docx_generate":
                             parsed["tool_input"] = {
                                 "title": step.strip()[:60] or "Approval Note",
                                 "content": str(last_output),
