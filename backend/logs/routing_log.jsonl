@@ -77,3 +77,21 @@
 {"task": "what is llm", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T22:49:36.924109"}
 {"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T23:31:24.055666"}
 {"task": "write the simple rust code for me creating file handlinh", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-27T23:38:01.686217"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:02:39.003806"}
+{"task": "what is docker", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:04:37.296825"}
+{"task": "what is OCR Model", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:05:20.832044"}
+{"task": "write the java code for whatever the numbe ris odd or even", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:06:04.230997"}
+{"task": "write the simple java code check given number is palindrome or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:13:39.265636"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:15:11.862158"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:16:24.020240"}
+{"task": "write the simple js program to find prime number", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:28:27.291928"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:29:30.120152"}
+{"task": "what is  bwnchmark", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:30:30.323313"}
+{"task": "what is machine learning", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:31:02.785064"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:43:53.123159"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:55:02.867077"}
+{"task": "what is docker", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T00:55:53.851179"}
+{"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T01:01:18.071004"}
+{"task": "extract sylabus (attached file: AIML_Engineer_Beginner_Syllabus.pdf)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:05:49.119543"}
+{"task": "extract the text form the image (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:07:54.244937"}
+{"task": "extract the content (attached file: industry.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:10:07.961295"}

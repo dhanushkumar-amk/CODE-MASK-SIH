@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Activity, Shield, Lock, Server, FileCheck } from "lucide-react";
+import { ShieldCheck, Lock, Server, FileText, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function StatusReadout() {
   const [networkStats, setNetworkStats] = useState({ tx: 0, rx: 0 });
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -24,78 +23,74 @@ export default function StatusReadout() {
   }, []);
 
   return (
-    <Card className="w-full border-blue-100/90 bg-white/90 font-sans text-xs text-slate-900 rounded-2xl shadow-xs overflow-hidden">
-      {/* Header Bar */}
-      <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-3.5 space-y-0">
-        <div className="flex items-center gap-2.5">
-          <Activity className="h-4 w-4 text-blue-600 animate-pulse-live" />
-          <span className="font-extrabold tracking-wider text-slate-900 uppercase text-[11px]">
-            FORTEXA TELEMETRY <span className="text-blue-600">//</span> LOCALHOST MONITOR
-          </span>
-        </div>
-        <Badge variant="outline" className="border-blue-200 bg-blue-50/80 text-blue-700 font-bold flex items-center gap-1.5 py-0.5 px-2.5 rounded-full text-[10px]">
-          <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse-live" />
-          <span>VERIFIED 0 B/s OUTBOUND</span>
-        </Badge>
-      </CardHeader>
-
-      {/* Grid of Telemetry Indicators */}
-      <CardContent className="divide-y divide-slate-100 p-0 bg-white">
-        <div className="flex items-center justify-between px-5 py-3.5 hover:bg-blue-50/30 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <Server className="h-4 w-4" />
-            </div>
-            <span className="text-slate-500 uppercase tracking-wider text-[11px] font-semibold">MODEL ENGINE:</span>
+    <div className="w-full rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-xs font-sans text-xs text-slate-700 shadow-2xs overflow-hidden transition-all">
+      {/* Compact Horizontal Telemetry Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Active Model Pill */}
+          <div className="flex items-center gap-2 text-slate-800 font-medium">
+            <Server className="h-3.5 w-3.5 text-blue-600" />
+            <span className="text-[11px] text-slate-500">Engine:</span>
+            <span className="font-mono text-xs font-semibold text-slate-900">qwen2.5:1.5b</span>
+            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" title="Loaded" />
           </div>
-          <span className="font-bold text-slate-900 font-mono">qwen2.5:1.5b-instruct — LOADED</span>
-        </div>
 
-        <div className="flex items-center justify-between px-5 py-3.5 hover:bg-blue-50/30 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <Shield className="h-4 w-4" />
-            </div>
-            <span className="text-slate-500 uppercase tracking-wider text-[11px] font-semibold">OUTBOUND SOCKETS:</span>
+          <div className="hidden sm:block h-3.5 w-px bg-slate-200" />
+
+          {/* Air-gap Zero Telemetry Status */}
+          <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="font-mono text-[11px] font-semibold">{networkStats.tx} B/s Outbound</span>
+            <span className="text-[10px] text-slate-400 font-normal">(Network Blocked)</span>
           </div>
-          <span className="font-bold text-emerald-700 font-mono">
-            {networkStats.tx} B/s (HARD NETWORK BLOCKED)
-          </span>
-        </div>
 
-        <div className="flex items-center justify-between px-5 py-3.5 hover:bg-blue-50/30 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <Lock className="h-4 w-4" />
-            </div>
-            <span className="text-slate-500 uppercase tracking-wider text-[11px] font-semibold">SANDBOX ENCLAVE:</span>
+          <div className="hidden md:block h-3.5 w-px bg-slate-200" />
+
+          {/* Docker Enclave Indicator */}
+          <div className="hidden md:flex items-center gap-1.5 text-slate-600">
+            <Lock className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-[11px]">Docker Enclave Active</span>
           </div>
-          <span className="font-bold text-slate-900 font-mono">
-            isolated (docker --network none)
-          </span>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3.5 hover:bg-blue-50/30 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <FileCheck className="h-4 w-4" />
+        {/* Toggle Details Button */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+        >
+          <span>{isExpanded ? "Hide Details" : "System Telemetry"}</span>
+          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+      </div>
+
+      {/* Expanded Metrics Section */}
+      {isExpanded && (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+          <div className="flex items-center gap-2">
+            <Server className="h-3.5 w-3.5 text-slate-400" />
+            <div>
+              <span className="text-slate-400 block text-[10px]">LOCAL MODEL</span>
+              <span className="font-mono font-medium text-slate-800">qwen2.5:1.5b-instruct</span>
             </div>
-            <span className="text-slate-500 uppercase tracking-wider text-[11px] font-semibold">DOCUMENT PIPELINE:</span>
           </div>
-          <span className="font-bold text-slate-900 font-mono">
-            PDF, CSV, XLSX, DOCX, PPTX, OCR
-          </span>
+          <div className="flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5 text-slate-400" />
+            <div>
+              <span className="text-slate-400 block text-[10px]">ENCLAVE ISOLATION</span>
+              <span className="font-mono font-medium text-slate-800">docker --network none</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <FileText className="h-3.5 w-3.5 text-slate-400" />
+            <div>
+              <span className="text-slate-400 block text-[10px]">SUPPORTED PIPELINE</span>
+              <span className="font-mono font-medium text-slate-800">PDF, CSV, XLSX, DOCX, PPTX</span>
+            </div>
+          </div>
         </div>
-      </CardContent>
-
-      {/* Terminal Footer Prompt */}
-      <CardFooter className="border-t border-slate-200/80 bg-slate-900 px-5 py-3 text-white flex items-center justify-between">
-        <span className="text-[11px] text-blue-300 font-mono">
-          root@fortexa-node:~# status --verify --zero-telemetry
-        </span>
-        <span className="animate-pulse-live font-bold text-blue-400 font-mono">_</span>
-      </CardFooter>
-    </Card>
+      )}
+    </div>
   );
 }
+
 

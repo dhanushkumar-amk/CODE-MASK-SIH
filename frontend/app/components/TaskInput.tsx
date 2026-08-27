@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Sparkles, FileUp, Play, Trash2, FileText, Table, Terminal, Presentation } from "lucide-react";
+import {
+  Sparkles,
+  Paperclip,
+  ArrowUp,
+  X,
+  FileText,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  FileCode,
+  Files,
+  Loader2,
+} from "lucide-react";
 import {
   ApiError,
   routeTask,
@@ -15,37 +24,16 @@ import {
   type RouteResult,
 } from "@/lib/api";
 
-const SAMPLE_PROMPTS = [
-  {
-    icon: Table,
-    label: "Analyze Crude Unit CSV",
-    prompt: "Read attached crude_unit_log.csv, extract temperature & pressure anomalies, and generate a summary report with key metrics.",
-  },
-  {
-    icon: FileText,
-    label: "Extract PDF Spec OCR",
-    prompt: "Perform OCR on the attached refinery_specification.pdf scan, parse section 4.2 compliance rules, and draft an executive summary.",
-  },
-  {
-    icon: Terminal,
-    label: "Python Sandbox Script",
-    prompt: "Write a standalone Python script to calculate heat exchanger efficiency from flow rate data and execute it in Docker.",
-  },
-  {
-    icon: Presentation,
-    label: "Generate PPTX Deck",
-    prompt: "Create a 5-slide PowerPoint presentation covering Q3 refinery maintenance schedule and environmental compliance metrics.",
-  },
-];
-
 export default function TaskInput({
   onRouteReady,
   onAgentEvent,
   onRunStart,
+  hideSuggestions = false,
 }: {
   onRouteReady?: (route: RouteResult) => void;
   onAgentEvent?: (event: AgentStreamEvent) => void;
   onRunStart?: (goal: string) => void;
+  hideSuggestions?: boolean;
 }) {
   const [taskText, setTaskText] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -53,18 +41,25 @@ export default function TaskInput({
   const [submitting, setSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [fileAccept, setFileAccept] = useState<string>("*/*");
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const canRun = (taskText.trim().length > 0 || fileName !== null) && !submitting;
-
-  const handleSelectSamplePrompt = (promptText: string) => {
-    setTaskText(promptText);
-    setError(null);
-  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setSelectedFile(file);
     setFileName(file ? file.name : null);
+    setShowAttachMenu(false);
+  };
+
+  const handleOpenPicker = (acceptTypes: string) => {
+    setFileAccept(acceptTypes);
+    setShowAttachMenu(false);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 50);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -87,11 +82,9 @@ export default function TaskInput({
     }
   };
 
-  const handleClear = () => {
-    setTaskText("");
+  const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileName(null);
-    setError(null);
   };
 
   const handleRunTask = async () => {
@@ -120,13 +113,16 @@ export default function TaskInput({
         return;
       }
 
+      // Clear input fields immediately for snappy chat response
+      setTaskText("");
+      setSelectedFile(null);
+      setFileName(null);
+
       onRunStart?.(goal);
 
-      // Step 1: Call POST /route first to get router decision
       const routing = await routeTask(goal);
       onRouteReady?.(routing);
 
-      // Step 2: Open SSE stream from POST /agent/run/stream
       await runAgentStream(goal, (event) => {
         onAgentEvent?.(event);
       });
@@ -140,140 +136,160 @@ export default function TaskInput({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleRunTask();
+    }
+  };
+
   return (
-    <div className="w-full border border-blue-100/90 bg-white/90 backdrop-blur-xs p-5 sm:p-7 shadow-xs hover:shadow-md transition-shadow font-sans text-xs rounded-2xl">
-      <div className="flex flex-col gap-6">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-            </div>
-            <label htmlFor="task-input" className="font-extrabold tracking-wider text-slate-900 uppercase text-xs">
-              TASK INPUT <span className="text-blue-600">//</span> COMMAND CONSOLE
-            </label>
-          </div>
-          <Badge variant="outline" className="border-blue-200/80 bg-blue-50/60 text-blue-700 font-semibold text-[10px] py-0.5 px-2.5 rounded-full">
-            100% ON-DEVICE ENCLAVE
-          </Badge>
-        </div>
+    <div className="w-full flex flex-col gap-2 font-sans text-xs relative">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={fileAccept}
+        onChange={handleFileChange}
+        className="sr-only"
+      />
 
-        {/* Interactive Clickable Sample Prompt Chips */}
-        <div className="flex flex-col gap-2.5">
-          <span className="font-sans text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            Quick Insert Sample Tasks:
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {SAMPLE_PROMPTS.map((sample, idx) => {
-              const IconComp = sample.icon;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSelectSamplePrompt(sample.prompt)}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 py-1.5 font-sans text-xs text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all cursor-pointer active:scale-95 shadow-2xs font-medium"
-                >
-                  <IconComp className="h-3.5 w-3.5 text-blue-600" />
-                  <span>{sample.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Textarea Command Input */}
-        <div className="flex flex-col gap-1.5">
-          <Textarea
-            id="task-input"
-            placeholder="Enter an industrial instruction or click one of the sample prompt chips above..."
-            value={taskText}
-            onChange={(e) => setTaskText(e.target.value)}
-            rows={5}
-            className="resize-none rounded-xl border-slate-200 bg-slate-50/30 font-mono text-xs text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-600 placeholder:text-slate-400 font-normal leading-relaxed p-4 transition-all"
-          />
-        </div>
-
-        {/* File Dropzone */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-sans text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Workspace Attachment (PDF, CSV, XLSX, DOCX, Scans):
-            </span>
-            {fileName && (
-              <button
-                type="button"
-                onClick={() => { setSelectedFile(null); setFileName(null); }}
-                className="text-[11px] text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-              >
-                <Trash2 className="h-3 w-3" />
-                Remove file
-              </button>
-            )}
-          </div>
-
-          <label
-            htmlFor="file-upload"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={cn(
-              "flex min-h-20 cursor-pointer flex-col items-center justify-center gap-1.5 border rounded-xl px-4 py-4 text-center transition-all",
-              isDragOver
-                ? "border-solid border-blue-600 bg-blue-50/80 shadow-xs"
-                : fileName
-                ? "border-solid border-blue-300 bg-blue-50/40"
-                : "border-dashed border-slate-300 bg-slate-50/60 hover:bg-blue-50/30 hover:border-blue-400"
-            )}
-          >
-            <input
-              id="file-upload"
-              type="file"
-              accept="image/*,.pdf,.svg,.csv,.xlsx,.docx,.pptx,.txt,.json"
-              onChange={handleFileChange}
-              className="sr-only"
-            />
-            <FileUp className={cn("h-5 w-5", fileName ? "text-blue-600" : "text-slate-500")} />
-            <span className={cn("font-bold text-xs", fileName ? "text-blue-700 font-mono" : "text-slate-800")}>
-              {fileName ? `[ATTACHED: ${fileName}]` : "Drop PDF scan, CSV, XLSX, DOCX, PPTX or click to browse"}
-            </span>
-            <span className="text-[10px] text-slate-500 font-sans">
-              {fileName ? "File attached to local enclave workspace" : "Stays 100% local inside air-gapped host memory"}
-            </span>
-          </label>
-        </div>
-
-        {/* Action Button Row */}
-        <div className="flex items-center justify-between gap-3 pt-1">
-          {taskText || fileName ? (
-            <Button
+      {/* Main Unified ChatGPT Floating Prompt Box */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={cn(
+          "relative flex flex-col w-full rounded-3xl border bg-white p-3 sm:px-4 sm:py-3.5 shadow-xs transition-all duration-200",
+          isDragOver
+            ? "border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20"
+            : "border-slate-300/80 focus-within:border-slate-400 hover:border-slate-300"
+        )}
+      >
+        {/* Attached File Chip Preview */}
+        {fileName && (
+          <div className="mb-2 flex items-center gap-2 self-start rounded-lg border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-xs text-slate-800 font-mono">
+            <Paperclip className="h-3.5 w-3.5 text-blue-600" />
+            <span className="truncate max-w-xs font-medium">{fileName}</span>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClear}
-              className="border-slate-200 text-slate-600 hover:bg-slate-100 font-mono text-xs uppercase rounded-xl"
+              onClick={handleRemoveFile}
+              className="ml-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
             >
-              Clear Console
-            </Button>
-          ) : <div />}
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
-          <Button
+        {/* Text Area */}
+        <textarea
+          id="task-input"
+          placeholder="Message Fortexa..."
+          value={taskText}
+          onChange={(e) => setTaskText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={2}
+          className="w-full resize-none border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none leading-relaxed font-sans px-1"
+        />
+
+        {/* Bottom Toolbar & Round Send Button */}
+        <div className="flex items-center justify-between pt-1 relative">
+          {/* Attachment Button & Popover Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
+            >
+              <Paperclip className="h-3.5 w-3.5 text-slate-500" />
+              <span>{fileName ? "Change" : "Attach"}</span>
+            </button>
+
+            {/* Ultra-Minimal Attach Menu Dropdown */}
+            {showAttachMenu && (
+              <div className="absolute bottom-10 left-0 z-50 flex flex-col w-44 rounded-xl border border-slate-200/90 bg-white p-1 shadow-md font-sans text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker(".pdf,.docx,.doc,.txt")}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span>Document / PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker(".csv,.xlsx,.xls")}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span>CSV Data</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker("image/*,.svg")}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                  <span>Image</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker(".py,.java,.js,.ts,.json,.sh")}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                >
+                  <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                  <span>Code File</span>
+                </button>
+
+                <div className="h-px bg-slate-100 my-0.5" />
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker("*/*")}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-500 hover:bg-slate-100/80 transition-colors text-left font-normal cursor-pointer"
+                >
+                  <Files className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span>Any File</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ChatGPT Style Round Send Button */}
+          <button
             type="button"
             onClick={handleRunTask}
             disabled={!canRun}
-            size="lg"
-            className="rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-mono text-xs uppercase tracking-widest text-white disabled:opacity-50 h-11 px-7 cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2.5 font-bold transition-all active:scale-[0.99]"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white disabled:opacity-20 hover:bg-blue-700 transition-all cursor-pointer shadow-2xs shrink-0"
           >
-            <Play className="h-3.5 w-3.5 fill-white" />
-            <span>{submitting ? "PROCESSING FORTEXA ENGINE..." : "RUN TASK ->"}</span>
-          </Button>
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
+            ) : (
+              <ArrowUp className="h-4 w-4 stroke-[2.5]" />
+            )}
+          </button>
         </div>
-
-        {error && (
-          <div className="border border-red-200 bg-red-50/80 px-4 py-3 font-mono text-xs text-red-700 rounded-xl flex items-center gap-2">
-            <span className="font-bold">[ERROR]:</span> {error}
-          </div>
-        )}
       </div>
+
+      {/* ChatGPT Disclaimer */}
+      <span className="text-[11px] text-slate-400 text-center font-normal px-2">
+        Fortexa can make mistakes. Runs 100% locally on-device inside air-gapped memory.
+      </span>
+
+      {error && (
+        <div className="border border-red-200 bg-red-50/80 px-4 py-2 font-sans text-xs text-red-700 rounded-xl flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-800">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+
+
+

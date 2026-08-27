@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/app/components/Navbar";
-import StatusReadout from "@/app/components/StatusReadout";
 import TaskInput from "@/app/components/TaskInput";
-import RoutingPanel from "@/app/components/RoutingPanel";
 import ExecutionTrace from "@/app/components/ExecutionTrace";
 import OutputPanel from "@/app/components/OutputPanel";
-import Footer from "@/app/components/Footer";
-import { Badge } from "@/components/ui/badge";
-import { ShieldAlert } from "lucide-react";
+import { User } from "lucide-react";
 import {
   type AgentRunResult,
   type AgentStreamEvent,
@@ -20,6 +16,12 @@ export default function Home() {
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
   const [agentResult, setAgentResult] = useState<AgentRunResult | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll down as new responses stream in
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [agentResult, isStreaming]);
 
   const handleResetConsole = () => {
     setRouteResult(null);
@@ -114,72 +116,120 @@ export default function Home() {
   const deliverable = getDeliverable();
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white relative bg-tech-grid">
-      <div className="absolute inset-0 bg-blue-glow pointer-events-none" />
-
-      {/* 1. Header Bar */}
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans relative selection:bg-blue-600 selection:text-white">
+      {/* Top Header */}
       <Navbar onResetConsole={handleResetConsole} />
 
-      {/* 2. Main Console Workspace */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8 relative z-10">
-        {/* Console Hero Banner */}
-        <div className="flex flex-col gap-3 border-b border-blue-100/80 pb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200/80 font-bold py-1 px-3 w-fit text-[10px] rounded-full shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse-live mr-1.5" />
-              FORTEXA AIR-GAPPED ON-PREMISE AI AGENT
-            </Badge>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
-              <ShieldAlert className="h-3.5 w-3.5 text-blue-600" />
-              <span>ZERO CLOUD TELEMETRY // LOCAL MEMORY ONLY</span>
+      {/* Scrollable Conversation Stream Window */}
+      <main className="flex-1 w-full overflow-y-auto">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 min-h-full">
+          {/* Landing View (when no task is running) */}
+          {!agentResult ? (
+            <div className="flex flex-col gap-8 my-auto py-12">
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
+                  What can I help with today?
+                </h1>
+              </div>
+
+              {/* 4 ChatGPT Style Quick Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto w-full">
+                <button
+                  onClick={() => handleRunStart("Read attached crude_unit_log.csv, extract temperature & pressure anomalies, and generate a summary report with key metrics.")}
+                  className="flex flex-col gap-1 text-left p-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100/70 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Analyze Crude Unit Log CSV
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Extract temperature & pressure anomalies
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => handleRunStart("Perform OCR on the attached refinery_specification.pdf scan, parse section 4.2 compliance rules, and draft an executive summary.")}
+                  className="flex flex-col gap-1 text-left p-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100/70 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Extract PDF Spec OCR Rules
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Parse compliance section rules from scans
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => handleRunStart("Write a Java program to check if a given number is odd or even.")}
+                  className="flex flex-col gap-1 text-left p-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100/70 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Write Java & Python Code
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Generate odd/even check or efficiency script
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => handleRunStart("Create a 5-slide PowerPoint presentation covering Q3 refinery maintenance schedule and environmental metrics.")}
+                  className="flex flex-col gap-1 text-left p-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100/70 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Generate PPTX Presentation
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Create maintenance & environmental deck
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Active Conversation Stream */
+            <div className="flex flex-col gap-6 pb-6 my-auto">
+              {/* User Prompt Message Bubble */}
+              <div className="flex gap-3 justify-end items-start pt-2">
+                <div className="bg-slate-200/70 text-slate-900 px-4 py-2.5 rounded-2xl rounded-tr-xs max-w-xl text-sm font-medium leading-relaxed shadow-2xs">
+                  {agentResult.goal}
+                </div>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-700 font-bold text-xs mt-0.5">
+                  <User className="h-3.5 w-3.5 text-slate-700" />
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-1.5 mt-1">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 font-sans">
-              FORTEXA <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">Operator Console</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 font-sans leading-relaxed max-w-3xl">
-              Self-hosted AI agent engine for oil refineries, defense, and heavy industry. Click sample prompts below or attach documents to process 100% on-device.
-            </p>
-          </div>
+              {/* Collapsible Reasoning & Steps Drawer */}
+              <ExecutionTrace
+                result={agentResult}
+                isStreaming={isStreaming}
+                route={routeResult}
+              />
+
+              {/* AI Assistant Output Deliverable */}
+              {(agentResult.completed || !isStreaming || (deliverable?.output && deliverable.output.length > 0)) && (
+                <OutputPanel
+                  output={deliverable?.output}
+                  filename={deliverable?.filename}
+                  codeResult={deliverable?.codeResult}
+                />
+              )}
+
+              {/* Scroll Anchor */}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
-
-        {/* 1. Main Task Input Panel with Sample Prompt Chips */}
-        <TaskInput
-          onRunStart={handleRunStart}
-          onRouteReady={handleRouteReady}
-          onAgentEvent={handleAgentEvent}
-        />
-
-        {/* 2. Live System Status Readout Telemetry Dashboard */}
-        <StatusReadout />
-
-        {/* 3. Router Decision Log */}
-        {routeResult && <RoutingPanel route={routeResult} />}
-
-        {/* 4. Agent Step Execution Trace */}
-        {agentResult && (
-          <div className="w-full border border-blue-100/90 bg-white/90 p-6 sm:p-8 rounded-2xl shadow-xs">
-            <ExecutionTrace
-              result={agentResult}
-              isStreaming={isStreaming}
-            />
-          </div>
-        )}
-
-        {/* 5. Final Deliverable Output Panel */}
-        {agentResult && (agentResult.completed || !isStreaming) && (
-          <OutputPanel
-            output={deliverable?.output}
-            filename={deliverable?.filename}
-            codeResult={deliverable?.codeResult}
-          />
-        )}
       </main>
 
-      {/* 3. Footer */}
-      <Footer />
+      {/* FIXED BOTTOM PROMPT INPUT BAR */}
+      <div className="shrink-0 w-full bg-slate-50/95 backdrop-blur-md pt-2 pb-4 px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto">
+          <TaskInput
+            onRunStart={handleRunStart}
+            onRouteReady={handleRouteReady}
+            onAgentEvent={handleAgentEvent}
+            hideSuggestions={true}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -208,3 +258,5 @@ function upsertStep(
   }
   return [...results, entry];
 }
+
+

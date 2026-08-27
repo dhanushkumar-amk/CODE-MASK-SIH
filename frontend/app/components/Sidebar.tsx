@@ -1,100 +1,91 @@
 "use client";
 
-import NetworkStatusBadge from "@/app/components/NetworkStatusBadge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Plus, MessageSquare, ShieldCheck, PanelLeftClose } from "lucide-react";
 
 export default function Sidebar({
-  activeTab = "new-task",
-  onSelectTab,
+  isOpen = true,
+  onToggle,
   onResetTask,
 }: {
-  activeTab?: "new-task" | "history";
-  onSelectTab?: (tab: "new-task" | "history") => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
   onResetTask?: () => void;
 }) {
+  if (!isOpen) return null;
+
   return (
-    <aside className="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-[#1F2026] bg-[#0C0D0E] font-mono text-xs text-[#F7F8F8] flex flex-col justify-between">
-      <div className="flex flex-col p-4 sm:p-5 gap-6">
-        {/* Logo & System Badge */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-bold tracking-tight text-white text-sm uppercase flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-white" />
-              SOVEREIGN
-            </span>
-            <Badge variant="outline" className="text-[9px] border-[#2A2C34] bg-[#14151A] text-[#8A8F98]">
-              v1.0
-            </Badge>
+    <aside className="w-64 shrink-0 h-screen bg-[#171717] text-slate-200 font-sans text-xs flex flex-col justify-between border-r border-white/10 z-40 fixed md:relative">
+      {/* Top Header & New Chat */}
+      <div className="flex flex-col p-3 gap-3">
+        {/* Top Control Bar */}
+        <div className="flex items-center justify-between px-2 pt-1 pb-1">
+          <div className="flex items-center gap-2 font-bold text-sm text-white">
+            <div className="h-6 w-6 rounded-md bg-blue-600 flex items-center justify-center font-black text-xs text-white">
+              F
+            </div>
+            <span>Fortexa</span>
           </div>
-          <span className="text-[10px] text-[#8A8F98] uppercase tracking-widest font-semibold">
-            WORKBENCH // CONSOLE
-          </span>
-        </div>
-
-        {/* Network Status Badge (Always Visible) */}
-        <div className="flex flex-col gap-1.5 border-y border-[#1F2026] py-3.5">
-          <span className="text-[10px] uppercase tracking-widest text-[#8A8F98] font-semibold">
-            TELEMETRY MONITOR
-          </span>
-          <NetworkStatusBadge className="w-full justify-center" />
-        </div>
-
-        {/* System Environment Info */}
-        <div className="flex flex-col gap-2.5 border-b border-[#1F2026] pb-4 text-[11px]">
-          <div className="flex justify-between items-center text-[#8A8F98]">
-            <span className="uppercase text-[#70757E]">MODEL:</span>
-            <span className="font-bold text-white">qwen2.5:1.5b</span>
-          </div>
-          <div className="flex justify-between items-center text-[#8A8F98]">
-            <span className="uppercase text-[#70757E]">ENCLAVE:</span>
-            <span className="font-bold text-white">docker --none</span>
-          </div>
-          <div className="flex justify-between items-center text-[#8A8F98]">
-            <span className="uppercase text-[#70757E]">HOST:</span>
-            <span className="font-bold text-white">127.0.0.1</span>
-          </div>
-        </div>
-
-        {/* Operator Console Navigation */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] uppercase tracking-widest text-[#8A8F98] font-semibold mb-1">
-            OPERATOR NAVIGATION
-          </span>
-          <Button
-            variant={activeTab === "new-task" ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              onSelectTab?.("new-task");
-              onResetTask?.();
-            }}
-            className={`w-full justify-start font-mono text-xs uppercase cursor-pointer ${
-              activeTab === "new-task" ? "bg-white text-black font-bold" : "bg-[#14151A] text-white border-[#26272D]"
-            }`}
+          <button
+            onClick={onToggle}
+            title="Close sidebar"
+            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
-            + NEW TASK CONSOLE
-          </Button>
-          <Button
-            variant={activeTab === "history" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onSelectTab?.("history")}
-            className={`w-full justify-between font-mono text-xs uppercase cursor-pointer ${
-              activeTab === "history" ? "bg-white text-black font-bold" : "bg-[#14151A] text-white border-[#26272D]"
-            }`}
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* New Chat Button */}
+        <button
+          onClick={onResetTask}
+          className="flex items-center gap-2.5 w-full rounded-lg border border-white/15 bg-transparent px-3 py-2.5 text-xs text-white hover:bg-white/10 transition-all cursor-pointer font-medium"
+        >
+          <Plus className="h-4 w-4 text-white" />
+          <span>New chat</span>
+        </button>
+
+        {/* Recent Chats Section */}
+        <div className="flex flex-col gap-1 mt-2">
+          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2">
+            Recent Tasks
+          </span>
+          <button
+            onClick={onResetTask}
+            className="flex items-center gap-2.5 w-full rounded-lg px-2.5 py-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition-colors cursor-pointer text-left truncate group"
           >
-            <span>TASK HISTORY</span>
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 border-[#2A2C34] bg-[#1E1F26] text-[#8A8F98]">
-              STUB
-            </Badge>
-          </Button>
+            <MessageSquare className="h-3.5 w-3.5 text-slate-400 group-hover:text-white shrink-0" />
+            <span className="truncate">Odd or Even Java Code</span>
+          </button>
+          <button
+            onClick={onResetTask}
+            className="flex items-center gap-2.5 w-full rounded-lg px-2.5 py-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition-colors cursor-pointer text-left truncate group"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-slate-400 group-hover:text-white shrink-0" />
+            <span className="truncate">Analyze Crude Unit Log CSV</span>
+          </button>
+          <button
+            onClick={onResetTask}
+            className="flex items-center gap-2.5 w-full rounded-lg px-2.5 py-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition-colors cursor-pointer text-left truncate group"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-slate-400 group-hover:text-white shrink-0" />
+            <span className="truncate">Refinery PDF OCR Parsing</span>
+          </button>
         </div>
       </div>
 
-      {/* Footer info inside sidebar */}
-      <div className="p-4 border-t border-[#1F2026] text-[10px] text-[#70757E] flex flex-col gap-1 bg-[#08090A]">
-        <span className="font-bold text-slate-300 uppercase">AIR-GAPPED ENCLAVE NODE</span>
-        <span>0 outbound telemetry transmission log</span>
+      {/* Footer Profile & Enclave Status */}
+      <div className="p-3 border-t border-white/10 flex items-center justify-between bg-[#141414]">
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
+            A
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-white leading-tight">Air-Gapped Node</span>
+            <span className="text-[10px] text-slate-400">100% Local Enclave</span>
+          </div>
+        </div>
+        <ShieldCheck className="h-4 w-4 text-emerald-500" />
       </div>
     </aside>
   );
 }
+
