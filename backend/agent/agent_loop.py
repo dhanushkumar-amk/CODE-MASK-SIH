@@ -172,10 +172,11 @@ def _build_step_prompt(
     return "\n".join(lines)
 
 
-def run_agent(goal: str, max_steps: int = 6) -> dict:
-    """Plan a goal, then loop through steps calling tools until done.
+def run_agent_stream(goal: str, max_steps: int = 6):
+    """Plan a goal, then loop through steps calling tools, yielding one
+    SSE-style event per phase instead of returning one final dict.
 
-    plan -> act -> check -> repeat:
+    Same plan -> act -> check -> repeat loop as run_agent():
       - PLAN:   model breaks the goal into steps (JSON); single-step
                 fallback if parsing fails.
       - ACT:    per step, the model responds in the tool-call schema.
@@ -184,34 +185,35 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
       - CHECK:  malformed JSON or an error marks the step "failed" and the
                 loop continues. Two consecutive failures abort the run.
 
-    Stopping conditions (first one wins):
-      - the model returns "final_answer",
-      - max_steps planned steps have run,
-      - two consecutive steps failed.
+    Yields, in order:
+      - {"event": "plan_ready", "goal", "plan"} right after planning,
+      - {"event": "step_start", "step_number", "step"} before each step's
+        model call, so a live UI can show the step as running,
+      - {"event": "step_complete", "step_number", **entry} after each step
+        finishes (entry carries status/action/output/tool fields),
+      - {"event": "done", ...full result dict} when the loop ends.
 
-    Args:
-        goal: The user's goal.
-        max_steps: Upper bound on how many planned steps to execute.
-
-    Returns:
-        Always a dict: {"goal", "plan", "results", "completed"}. Each
-        result entry has step/status/action/output plus tool_name for
-        tool calls. Never raises - even a total model outage returns the
-        shape with failed steps.
+    Never raises; the final "done" event is always emitted.
     """
     plan = _plan(goal)[:max_steps]
+    yield {"event": "plan_ready", "goal": goal, "plan": plan}
 
     results = []
     consecutive_failures = 0
     done = False
+    step_number = 0
 
     for step in plan:
+        step_number += 1
         entry = {
             "step": step,
             "status": "failed",
             "action": None,
             "output": "",
+            "reasoning": None,
+            "tool_input": None,
         }
+        yield {"event": "step_start", "step_number": step_number, "step": step}
 
         try:
             raw = call_model(
@@ -229,12 +231,18 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
                 entry["output"] = "(malformed JSON from model)"
                 results.append(entry)
                 consecutive_failures += 1
+                yield _step_event("step_complete", step_number, entry)
                 if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                     break
                 continue
 
             action = parsed.get("action")
             entry["action"] = action
+            # Keep the model's raw inputs for the Execution Trace UI: the
+            # frontend shows tool_input (what was called with) and reasoning
+            # (why) alongside each step's output.
+            entry["reasoning"] = parsed.get("reasoning")
+            entry["tool_input"] = parsed.get("tool_input")
 
             # Normalization: the 1.5B model sometimes puts the tool name in
             # the "action" slot instead of "tool_call". If action is a known
@@ -302,6 +310,7 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
             entry["output"] = f"ERROR: unexpected {type(exc).__name__}: {exc}"
 
         results.append(entry)
+        yield _step_event("step_complete", step_number, entry)
 
         if entry["status"] == "failed":
             consecutive_failures += 1
@@ -326,6 +335,12 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
     # iterations to keep a fixated model from looping forever.
     if not done and results:
         for _ in range(3):
+            step_number += 1
+            yield {
+                "event": "step_start",
+                "step_number": step_number,
+                "step": "(final synthesis)",
+            }
             context_lines = []
             for r in results:
                 context_lines.append(
@@ -361,44 +376,70 @@ def run_agent(goal: str, max_steps: int = 6) -> dict:
                 action = "tool_call"
 
             if action == "final_answer":
-                results.append(
-                    {
-                        "step": "(final synthesis)",
-                        "status": "done",
-                        "action": "final_answer",
-                        "output": parsed.get("output") or parsed.get("answer") or "",
-                    }
-                )
+                entry = {
+                    "step": "(final synthesis)",
+                    "status": "done",
+                    "action": "final_answer",
+                    "output": parsed.get("output") or parsed.get("answer") or "",
+                }
+                results.append(entry)
+                yield _step_event("step_complete", step_number, entry)
                 done = True
                 break
 
             if action == "tool_call":
                 dispatch_result = dispatch_tool_call(parsed)
-                results.append(
-                    {
-                        "step": "(synthesis tool call)",
-                        "status": (
-                            "done"
-                            if dispatch_result["status"] == "success"
-                            else "failed"
-                        ),
-                        "action": "tool_call",
-                        "tool_name": parsed.get("tool_name"),
-                        "output": dispatch_result["output"],
-                    }
-                )
+                entry = {
+                    "step": "(synthesis tool call)",
+                    "status": (
+                        "done"
+                        if dispatch_result["status"] == "success"
+                        else "failed"
+                    ),
+                    "action": "tool_call",
+                    "tool_name": parsed.get("tool_name"),
+                    "output": dispatch_result["output"],
+                }
+                results.append(entry)
+                yield _step_event("step_complete", step_number, entry)
                 continue
 
             # Unknown action: stop asking, the model is off-track.
             break
 
     completed = done and all(r["status"] == "done" for r in results)
-    return {
+    yield {
+        "event": "done",
         "goal": goal,
         "plan": plan,
         "results": results,
         "completed": completed,
     }
+
+
+def _step_event(event: str, step_number: int, entry: dict) -> dict:
+    """Wrap a finished entry as an SSE event, tagged with its 1-based index."""
+    return {"event": event, "step_number": step_number, **entry}
+
+
+def run_agent(goal: str, max_steps: int = 6) -> dict:
+    """Plan a goal, then loop through steps calling tools until done.
+
+    Non-streaming wrapper: drains run_agent_stream() and returns only the
+    final "done" event's result dict. Kept for the one-shot /agent/run
+    endpoint and the test suites; live UI consumers use the generator
+    directly via /agent/run/stream.
+
+    Returns:
+        Always a dict: {"goal", "plan", "results", "completed"}. Each
+        result entry has step/status/action/output plus tool_name for
+        tool calls. Never raises - even a total model outage returns the
+        shape with failed steps.
+    """
+    final = None
+    for event in run_agent_stream(goal, max_steps):
+        final = event
+    return final or {"goal": goal, "plan": [], "results": [], "completed": False}
 
 
 if __name__ == "__main__":

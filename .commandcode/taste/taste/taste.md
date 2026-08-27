@@ -89,3 +89,14 @@
 - Prefers self-hosted fonts (system font stacks or local `next/font`) over Google Fonts/CDN font links so the app stays fully offline with zero external fetch even at build time. Confidence: 0.6
 - Prefers building UI interaction/state first with a stubbed backend: before the real API is wired, use a brief fake delay and a console.log so button loading/disabled states can be verified, then connect real data in a later phase. Confidence: 0.7
 - Prefers UI work to be assessed for visual/aesthetic quality in addition to functional correctness — specifically whether a monochrome screen reads as clean and minimal rather than sparse/empty or cluttered. Confidence: 0.6
+- Prefers verifying a backend endpoint directly with curl (before touching the frontend) so the API contract is proven in isolation before UI integration. Confidence: 0.75
+- Prefers a dedicated typed frontend API client module (e.g., lib/api.ts) with typed request/response interfaces and async functions, so components call typed wrappers rather than raw fetch. Confidence: 0.7
+- Prefers frontend fetch failures to surface as a friendly user-facing message (typed error wrapper, e.g., backend not running) rather than crashing the UI. Confidence: 0.65
+- Prefers deferring non-core features (e.g., file upload) with an explicit console.log note rather than blocking the main integration task. Confidence: 0.6
+- Prefers conveying UI status/state via icon shape and weight (filled vs outlined, check vs X vs spinner) rather than color, so distinctions stay legible within a grayscale palette. Confidence: 0.6
+- Prefers collapsible/expandable detail sections collapsed by default, so dense views (e.g., step traces) stay clean while full raw detail is one click away. Confidence: 0.6
+- Prefers rendering step-by-step/process output as a vertical timeline — numbered nodes joined by a thin vertical line — rather than a flat list. Confidence: 0.55
+- Prefers documenting deferred/future-phase work as an inline code comment (e.g., "true streaming arrives next phase via SSE") rather than leaving the limitation unstated. Confidence: 0.6
+- Prefers lifting shared result state up to the page component (via a callback prop) when later sibling components will consume the same data, rather than keeping it trapped in a child. Confidence: 0.6
+- Prefers normalizing backend wire-format differences at the API-client boundary (e.g., mapping `action`→`action_type` in lib/api.ts) so UI components consume clean domain types. Confidence: 0.55
+- Prefers running a TypeScript typecheck (`npx tsc --noEmit`) after frontend edits to catch type errors before runtime. Confidence: 0.6

@@ -5,15 +5,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { ApiError, routeTask, runAgent, type AgentRunResult, type RouteResult } from "@/lib/api";
+import { ApiError, routeTask, runAgentStream, type AgentStreamEvent, type RouteResult } from "@/lib/api";
 
-export default function TaskInput() {
+export default function TaskInput({
+  onAgentEvent,
+}: {
+  /** Called with every live event from /agent/run/stream. */
+  onAgentEvent?: (event: AgentStreamEvent) => void;
+}) {
   const [taskText, setTaskText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
-  const [agentResult, setAgentResult] = useState<AgentRunResult | null>(null);
 
   // A task can be described in text, or carried in a scan (image/pdf).
   const canRun =
@@ -31,7 +35,6 @@ export default function TaskInput() {
 
     setError(null);
     setRouteResult(null);
-    setAgentResult(null);
     setSubmitting(true);
 
     try {
@@ -55,9 +58,15 @@ export default function TaskInput() {
       setRouteResult(routing);
       console.log("Routing decision:", routing);
 
-      const agent = await runAgent(goal);
-      setAgentResult(agent);
-      console.log("Agent result:", agent);
+      // Stream the agent loop: each event fires immediately as it happens
+      // server-side, so the ExecutionTrace grows step by step instead of
+      // appearing all at once at the end.
+      await runAgentStream(goal, (event) => {
+        onAgentEvent?.(event);
+        if (event.event === "step_complete") {
+          console.log("Step complete:", event);
+        }
+      });
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -141,32 +150,14 @@ export default function TaskInput() {
           </p>
         )}
 
-        {(routeResult || agentResult) && (
-          <div className="mt-2 flex flex-col gap-3 rounded-lg border border-border bg-white p-4">
-            {routeResult && (
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Routing decision
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  task_type: {routeResult.task_type} · model:{" "}
-                  {routeResult.model}
-                </p>
-              </div>
-            )}
-            {agentResult && (
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Agent result ({agentResult.completed ? "completed" : "incomplete"})
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {agentResult.results
-                    .map((step) => step.output)
-                    .filter(Boolean)
-                    .join("\n") || "(no output)"}
-                </p>
-              </div>
-            )}
+        {routeResult && (
+          <div className="mt-2 flex flex-col gap-1 rounded-lg border border-border bg-white p-4">
+            <p className="text-sm font-medium text-foreground">
+              Routing decision
+            </p>
+            <p className="text-sm text-muted-foreground">
+              task_type: {routeResult.task_type} · model: {routeResult.model}
+            </p>
           </div>
         )}
       </div>

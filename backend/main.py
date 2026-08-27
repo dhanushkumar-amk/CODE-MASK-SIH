@@ -4,10 +4,11 @@ import json
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agent.ollama_client import OllamaError, call_model
-from agent.agent_loop import run_agent
+from agent.agent_loop import run_agent, run_agent_stream
 from config import DEFAULT_MODEL
 from monitor.network_monitor import get_network_stats
 from router.router import LOG_FILE, route_task
@@ -114,6 +115,55 @@ def agent_run(body: AgentRunRequest):
             status_code=500,
             detail=f"Agent run failed: {exc}",
         )
+
+
+def _sse_event(payload: dict) -> str:
+    """Format a dict as a Server-Sent Events data frame.
+
+    SSE framing is `data: <json>\n\n`; a comment keepalive (`: ping`) is
+    interleaved so proxies/browsers don't close an idle connection while
+    a model call is in flight.
+    """
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+@app.post("/agent/run/stream")
+def agent_run_stream(body: AgentRunRequest):
+    """Stream the agent loop as Server-Sent Events, one event per phase.
+
+    The client receives events incrementally: plan_ready first, then
+    step_start/step_complete pairs as each step runs, and a final done
+    event with the full result dict. Strictly localhost traffic - the
+    generator itself never makes external network calls.
+    """
+    if not body.goal or not body.goal.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Missing or empty 'goal' field in request body",
+        )
+
+    def event_stream():
+        try:
+            for payload in run_agent_stream(body.goal.strip()):
+                yield _sse_event(payload)
+                # Keepalive between events: each step involves a model
+                # call that can take many seconds, and an SSE client must
+                # not see a fully idle connection.
+                yield ": ping\n\n"
+        except Exception as exc:
+            yield _sse_event(
+                {"event": "error", "message": f"Agent run failed: {exc}"}
+            )
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.get("/routing-log")
