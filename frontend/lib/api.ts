@@ -292,3 +292,38 @@ export async function runAgentStream(
 export function getDownloadUrl(filename: string): string {
   return `${BACKEND_URL}/download/${encodeURIComponent(filename)}`;
 }
+
+/** Transcribe recorded voice audio 100% offline via POST /voice/transcribe. */
+export async function transcribeVoice(audioBlob: Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", audioBlob, "voice_recording.webm");
+
+  let response: Response;
+  try {
+    response = await fetch(`${BACKEND_URL}/voice/transcribe`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch {
+    throw new ApiError(
+      "Cannot reach the backend at localhost:8000. Is it running?"
+    );
+  }
+
+  if (!response.ok) {
+    let detail = `Voice transcription failed with status ${response.status}`;
+    try {
+      const parsed = await response.json();
+      if (parsed && typeof parsed.detail === "string") {
+        detail = parsed.detail;
+      }
+    } catch {
+      // Non-JSON error
+    }
+    throw new ApiError(detail, response.status);
+  }
+
+  const result = await response.json();
+  return result.text || "";
+}
+

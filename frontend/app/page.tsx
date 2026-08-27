@@ -197,12 +197,15 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans relative selection:bg-blue-600 selection:text-white">
-      {/* Top Header with Live KPI Counter */}
+      {/* Top Header with Session Log & Actions */}
       <Navbar
         onResetConsole={handleResetConsole}
         tasksCompleted={tasksCompleted}
         filesGenerated={filesGenerated}
         externalCalls={0}
+        history={history}
+        onSelectRun={handleSelectHistoryRun}
+        onClearHistory={handleClearHistory}
       />
 
       {/* Scrollable Conversation Stream Window */}

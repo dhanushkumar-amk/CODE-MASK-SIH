@@ -226,3 +226,42 @@ def routing_log():
                 decisions.append(json.loads(line))
 
     return list(reversed(decisions))
+
+
+@app.post("/voice/transcribe")
+async def voice_transcribe(file: UploadFile = File(...)):
+    """Transcribe uploaded audio file using local Vosk model 100% offline."""
+    from voice.speech_to_text import transcribe_audio
+
+    tmp_dir = WORKSPACE_DIR / "tmp_audio"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = file.filename or "recording.wav"
+    tmp_file_path = tmp_dir / filename
+
+    try:
+        content = await file.read()
+        tmp_file_path.write_bytes(content)
+
+        result = transcribe_audio(str(tmp_file_path))
+        if result.get("status") == "success":
+            return {"text": result.get("output", ""), "status": "success"}
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("message", "Voice transcription failed"),
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Voice transcription error: {exc}",
+        )
+    finally:
+        if tmp_file_path.exists():
+            try:
+                tmp_file_path.unlink()
+            except Exception:
+                pass
+

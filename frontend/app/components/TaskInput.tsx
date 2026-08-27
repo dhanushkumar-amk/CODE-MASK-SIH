@@ -14,12 +14,14 @@ import {
   FileCode,
   Files,
   Loader2,
+  Mic,
 } from "lucide-react";
 import {
   ApiError,
   routeTask,
   runAgentStream,
   uploadFile,
+  transcribeVoice,
   type AgentStreamEvent,
   type RouteResult,
 } from "@/lib/api";
@@ -44,8 +46,69 @@ export default function TaskInput({
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [fileAccept, setFileAccept] = useState<string>("*/*");
 
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canRun = (taskText.trim().length > 0 || fileName !== null) && !submitting;
+  const canRun = (taskText.trim().length > 0 || fileName !== null) && !submitting && !isRecording;
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+
+        if (audioBlob.size > 0) {
+          setIsTranscribing(true);
+          try {
+            const transcribedText = await transcribeVoice(audioBlob);
+            if (transcribedText && transcribedText.trim()) {
+              setTaskText((prev) => (prev ? `${prev} ${transcribedText.trim()}` : transcribedText.trim()));
+            }
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Voice transcription failed.");
+          } finally {
+            setIsTranscribing(false);
+          }
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setError(null);
+    } catch (err) {
+      setError("Microphone access denied or unreadable.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -194,68 +257,100 @@ export default function TaskInput({
 
         {/* Bottom Toolbar & Round Send Button */}
         <div className="flex items-center justify-between pt-1 relative">
-          {/* Attachment Button & Popover Dropdown */}
-          <div className="relative">
+          {/* Attachment Button & Voice Button Group */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowAttachMenu(!showAttachMenu)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
+              >
+                <Paperclip className="h-3.5 w-3.5 text-slate-500" />
+                <span>{fileName ? "Change" : "Attach"}</span>
+              </button>
+
+              {/* Ultra-Minimal Attach Menu Dropdown */}
+              {showAttachMenu && (
+                <div className="absolute bottom-10 left-0 z-50 flex flex-col w-44 rounded-xl border border-slate-200/90 bg-white p-1 shadow-md font-sans text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker(".pdf,.docx,.doc,.txt")}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                    <span>Document / PDF</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker(".csv,.xlsx,.xls")}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span>CSV Data</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker("image/*,.svg")}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                  >
+                    <ImageIcon className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                    <span>Image</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker(".py,.java,.js,.ts,.json,.sh")}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                  >
+                    <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                    <span>Code File</span>
+                  </button>
+
+                  <div className="h-px bg-slate-100 my-0.5" />
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker("*/*")}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-500 hover:bg-slate-100/80 transition-colors text-left font-normal cursor-pointer"
+                  >
+                    <Files className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>Any File</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Offline Voice Mic Input Button */}
             <button
               type="button"
-              onClick={() => setShowAttachMenu(!showAttachMenu)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
+              onClick={toggleRecording}
+              disabled={isTranscribing}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all cursor-pointer",
+                isRecording
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md animate-pulse"
+                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )}
             >
-              <Paperclip className="h-3.5 w-3.5 text-slate-500" />
-              <span>{fileName ? "Change" : "Attach"}</span>
+              {isTranscribing ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                  <span className="font-mono text-[11px] text-blue-700">Transcribing...</span>
+                </>
+              ) : isRecording ? (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                  <span className="font-mono text-[11px] text-white">Listening...</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Voice</span>
+                </>
+              )}
             </button>
-
-            {/* Ultra-Minimal Attach Menu Dropdown */}
-            {showAttachMenu && (
-              <div className="absolute bottom-10 left-0 z-50 flex flex-col w-44 rounded-xl border border-slate-200/90 bg-white p-1 shadow-md font-sans text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker(".pdf,.docx,.doc,.txt")}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                >
-                  <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                  <span>Document / PDF</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker(".csv,.xlsx,.xls")}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span>CSV Data</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker("image/*,.svg")}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                >
-                  <ImageIcon className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                  <span>Image</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker(".py,.java,.js,.ts,.json,.sh")}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                >
-                  <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                  <span>Code File</span>
-                </button>
-
-                <div className="h-px bg-slate-100 my-0.5" />
-
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker("*/*")}
-                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-500 hover:bg-slate-100/80 transition-colors text-left font-normal cursor-pointer"
-                >
-                  <Files className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>Any File</span>
-                </button>
-              </div>
-            )}
           </div>
 
           {/* ChatGPT Style Round Send Button */}
@@ -290,6 +385,7 @@ export default function TaskInput({
     </div>
   );
 }
+
 
 
 
