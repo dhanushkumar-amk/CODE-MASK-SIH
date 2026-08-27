@@ -97,8 +97,17 @@ def _eval_node(node: ast.AST) -> int | float:
         return [_eval_node(elt) for elt in node.elts]
     if isinstance(node, ast.Tuple):
         return tuple(_eval_node(elt) for elt in node.elts)
+    if isinstance(node, ast.Attribute):
+        obj = _eval_node(node.value)
+        return getattr(obj, node.attr)
     if isinstance(node, ast.Call):
-        func = _SAFE_FUNCTIONS[node.func.id]
+        if isinstance(node.func, ast.Name):
+            func = _SAFE_FUNCTIONS[node.func.id]
+        elif isinstance(node.func, ast.Attribute):
+            obj = _eval_node(node.func.value)
+            func = getattr(obj, node.func.attr)
+        else:
+            raise ValueError("unsupported call node")
         args = [_eval_node(arg) for arg in node.args]
         return func(*args)
     if isinstance(node, ast.UnaryOp):
