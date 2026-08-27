@@ -76,7 +76,7 @@ STEP_TOOL_SIGNALS = [
     (("word document", ".docx", "approval note"), "docx_generate"),
     (("presentation", "slides", ".pptx"), "pptx_generate"),
     (("spreadsheet", "excel", ".xlsx"), "xlsx_generate"),
-    (("scanned image", "scan", ".png", ".jpg", ".jpeg"), "ocr_extract_image"),
+    (("scanned image", "scan", ".png", ".jpg", ".jpeg", ".svg"), "ocr_extract_image"),
     (("scanned pdf", ".pdf"), "ocr_extract_pdf"),
     (("sop", "knowledge base", "manual", "look up", "search for"), "rag_retrieve"),
     (("save", "write to"), "file_write"),
@@ -385,6 +385,8 @@ def run_agent_stream(goal: str, max_steps: int = 6):
                     "status": "done",
                     "action": "final_answer",
                     "output": parsed.get("output") or parsed.get("answer") or "",
+                    "reasoning": parsed.get("reasoning"),
+                    "tool_input": None,
                 }
                 results.append(entry)
                 yield _step_event("step_complete", step_number, entry)
@@ -403,6 +405,8 @@ def run_agent_stream(goal: str, max_steps: int = 6):
                     "action": "tool_call",
                     "tool_name": parsed.get("tool_name"),
                     "output": dispatch_result["output"],
+                    "reasoning": parsed.get("reasoning"),
+                    "tool_input": parsed.get("tool_input"),
                 }
                 results.append(entry)
                 yield _step_event("step_complete", step_number, entry)

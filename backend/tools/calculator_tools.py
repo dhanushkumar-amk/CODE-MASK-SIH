@@ -18,31 +18,58 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # The only AST node types and operators the calculator accepts.
 _ALLOWED_OPERATORS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow)
 _ALLOWED_UNARY = (ast.UAdd, ast.USub)
+_SAFE_FUNCTIONS = {
+    "len": len,
+    "int": int,
+    "float": float,
+    "abs": abs,
+    "round": round,
+    "min": min,
+    "max": max,
+    "sum": sum,
+}
 
 
-def _validate_node(node: ast.AST) -> str | None:
+def _validate_node(node: ast.AST, in_call_arg: bool = False) -> str | None:
     """Recursively check an AST node against the whitelist.
 
     Returns an error message if anything unsafe/unsupported is found,
     else None.
     """
     if isinstance(node, ast.Expression):
-        return _validate_node(node.body)
+        return _validate_node(node.body, in_call_arg)
     if isinstance(node, ast.BinOp):
         if type(node.op) not in _ALLOWED_OPERATORS:
             return f"operator not allowed: {type(node.op).__name__}"
-        return _validate_node(node.left) or _validate_node(node.right)
+        return _validate_node(node.left, in_call_arg) or _validate_node(node.right, in_call_arg)
     if isinstance(node, ast.UnaryOp):
         if type(node.op) not in _ALLOWED_UNARY:
             return f"unary operator not allowed: {type(node.op).__name__}"
-        return _validate_node(node.operand)
+        return _validate_node(node.operand, in_call_arg)
     if isinstance(node, ast.Constant):
-        # Numbers only - no strings, bytes, None, or bools pretending
-        # to be numbers.
-        if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
+        if isinstance(node.value, bool):
+            return f"value not allowed: {node.value!r}"
+        if in_call_arg and isinstance(node.value, str):
+            return None
+        if not isinstance(node.value, (int, float)):
             return f"value not allowed: {node.value!r}"
         return None
-    # Names, Calls, Attributes, Subscripts, imports... anything else.
+    if isinstance(node, ast.List) or isinstance(node, ast.Tuple):
+        for elt in node.elts:
+            err = _validate_node(elt, in_call_arg)
+            if err:
+                return err
+        return None
+    if isinstance(node, ast.Call):
+        if not isinstance(node.func, ast.Name) or node.func.id not in _SAFE_FUNCTIONS:
+            func_name = node.func.id if isinstance(node.func, ast.Name) else type(node.func).__name__
+            return f"function call not allowed: {func_name}"
+        for arg in node.args:
+            err = _validate_node(arg, in_call_arg=True)
+            if err:
+                return err
+        return None
+    # Names, Attributes, Subscripts, imports... anything else.
     return f"expression element not allowed: {type(node).__name__}"
 
 
@@ -52,6 +79,14 @@ def _eval_node(node: ast.AST) -> int | float:
         return _eval_node(node.body)
     if isinstance(node, ast.Constant):
         return node.value
+    if isinstance(node, ast.List):
+        return [_eval_node(elt) for elt in node.elts]
+    if isinstance(node, ast.Tuple):
+        return tuple(_eval_node(elt) for elt in node.elts)
+    if isinstance(node, ast.Call):
+        func = _SAFE_FUNCTIONS[node.func.id]
+        args = [_eval_node(arg) for arg in node.args]
+        return func(*args)
     if isinstance(node, ast.UnaryOp):
         value = _eval_node(node.operand)
         return +value if isinstance(node.op, ast.UAdd) else -value

@@ -72,6 +72,7 @@ def call_model(
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "keep_alive": "10m",
         "options": DEFAULT_GENERATION_PARAMS,
     }
     if system_prompt:

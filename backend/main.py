@@ -2,7 +2,7 @@
 
 import json
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -12,13 +12,14 @@ from agent.agent_loop import run_agent, run_agent_stream
 from config import DEFAULT_MODEL
 from monitor.network_monitor import get_network_stats
 from router.router import LOG_FILE, route_task
+from tools.file_tools import _resolve_safe
 
 app = FastAPI(title="Sovereign AI Workbench API")
 
 # Allow the Next.js frontend (dev server) to call this API.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

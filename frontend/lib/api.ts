@@ -197,7 +197,7 @@ export async function runAgentStream(
   // and done results carry "action", the UI type uses "action_type".
   const emit = (event: WireStreamEvent) => {
     if (event.event === "step_complete") {
-      const { step_number, ...wire } = event;
+      const { step_number, event: _e, ...wire } = event;
       onEvent({ event: "step_complete", step_number, ...toUiStep(wire) });
     } else if (event.event === "done") {
       const { event: _e, ...wireResult } = event;

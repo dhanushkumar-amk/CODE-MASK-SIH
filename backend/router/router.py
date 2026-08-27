@@ -80,6 +80,7 @@ VISION_NOUNS = (
     "handwritten",
     "screenshot",
     "screenshots",
+    "svg",
 )
 VISION_ADJECTIVES = ("scanned",)
 

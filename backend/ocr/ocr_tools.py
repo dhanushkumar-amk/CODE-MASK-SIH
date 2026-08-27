@@ -44,7 +44,7 @@ if pytesseract is not None and sys.platform == "win32":
     if TESSERACT_EXE.exists():
         pytesseract.pytesseract.tesseract_cmd = str(TESSERACT_EXE)
 
-SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".svg"}
 
 
 def _clean_ocr_text(text: str) -> str:
@@ -65,10 +65,10 @@ def _ocr_image(image: Image.Image) -> str:
 
 
 def extract_text_from_image(image_path: str) -> dict:
-    """Run OCR on an image file in the workspace.
+    """Run OCR/extraction on an image or vector file in the workspace.
 
     Args:
-        image_path: Path relative to backend/workspace/ (png/jpg/jpeg).
+        image_path: Path relative to backend/workspace/ (png/jpg/jpeg/svg).
 
     Returns:
         {"status": "success", "output": "<extracted text>",
@@ -77,13 +77,6 @@ def extract_text_from_image(image_path: str) -> dict:
         missing, an unsupported format, or OCR produced empty text.
         Never raises.
     """
-    if pytesseract is None or Image is None:
-        return {
-            "status": "error",
-            "output": "pytesseract/Pillow not installed. Run: "
-            "pip install pytesseract pillow",
-        }
-
     safe_path = _resolve_safe(image_path)
     if safe_path is None:
         return {
@@ -102,6 +95,36 @@ def extract_text_from_image(image_path: str) -> dict:
 
     if not safe_path.exists():
         return {"status": "error", "output": f"Image not found: {image_path}"}
+
+    # SVG files are text-based XML: extract text labels directly from tags.
+    if safe_path.suffix.lower() == ".svg":
+        try:
+            raw_svg = safe_path.read_text(encoding="utf-8")
+            matches = re.findall(r">([^<]+)<", raw_svg)
+            extracted = " ".join(m.strip() for m in matches if m.strip())
+            if not extracted:
+                extracted = re.sub(r"<[^>]+>", " ", raw_svg).strip()
+                extracted = re.sub(r"\s+", " ", extracted)
+            extracted = _clean_ocr_text(extracted)
+            if not extracted:
+                return {
+                    "status": "error",
+                    "output": "SVG contains no text content.",
+                }
+            return {
+                "status": "success",
+                "output": extracted,
+                "char_count": len(extracted),
+            }
+        except Exception as exc:
+            return {"status": "error", "output": f"Could not read SVG file: {exc}"}
+
+    if pytesseract is None or Image is None:
+        return {
+            "status": "error",
+            "output": "pytesseract/Pillow not installed. Run: "
+            "pip install pytesseract pillow",
+        }
 
     try:
         with Image.open(safe_path) as image:

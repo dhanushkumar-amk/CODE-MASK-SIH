@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>System Architecture Diagram</title>
+  <desc>Diagram showing system layers: User Interface, API Gateway, Agent Core, Tools Sandbox, Local Storage</desc>
+  <g>
+    <rect x="50" y="50" width="700" height="80" fill="#f5f5f5" stroke="#000000"/>
+    <text x="70" y="95" font-family="sans-serif" font-size="20" fill="#000000">Layer 1: User Interface - Next.js 16 Client with Live Execution Trace</text>
+  </g>
+  <g>
+    <rect x="50" y="150" width="700" height="80" fill="#f5f5f5" stroke="#000000"/>
+    <text x="70" y="195" font-family="sans-serif" font-size="20" fill="#000000">Layer 2: API &amp; Task Router - FastAPI Server with Heuristic Routing</text>
+  </g>
+  <g>
+    <rect x="50" y="250" width="700" height="80" fill="#f5f5f5" stroke="#000000"/>
+    <text x="70" y="295" font-family="sans-serif" font-size="20" fill="#000000">Layer 3: Agent Core - Local Ollama Model (qwen2.5:1.5b-instruct)</text>
+  </g>
+  <g>
+    <rect x="50" y="350" width="700" height="80" fill="#f5f5f5" stroke="#000000"/>
+    <text x="70" y="395" font-family="sans-serif" font-size="20" fill="#000000">Layer 4: Tools Sandbox - Sandboxed OCR, Python Exec, Document Tools</text>
+  </g>
+  <g>
+    <rect x="50" y="450" width="700" height="80" fill="#f5f5f5" stroke="#000000"/>
+    <text x="70" y="495" font-family="sans-serif" font-size="20" fill="#000000">Layer 5: Local Storage - ChromaDB Vector Store &amp; Workspace Sandbox</text>
+  </g>
+</svg>

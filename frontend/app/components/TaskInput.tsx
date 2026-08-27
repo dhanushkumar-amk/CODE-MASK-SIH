@@ -38,19 +38,18 @@ export default function TaskInput({
     setSubmitting(true);
 
     try {
-      // File uploads are wired to the OCR pipeline in a later phase; for
-      // now the text path (or a filename-only note) goes through routing
-      // and the agent loop.
-      if (fileName !== null) {
-        console.log(
-          "File upload handling (OCR pipeline) will be wired in a later phase:",
-          fileName
-        );
+      const rawText = taskText.trim();
+      let goal = rawText;
+      if (fileName) {
+        if (!rawText) {
+          goal = `Extract and analyze content from ${fileName}`;
+        } else {
+          goal = `${rawText} (attached scan: ${fileName})`;
+        }
       }
 
-      const goal = taskText.trim();
       if (!goal) {
-        setError("Enter a task description to run.");
+        setError("Enter a task description or attach a file to run.");
         return;
       }
 
@@ -119,7 +118,7 @@ export default function TaskInput({
             <input
               id="file-upload"
               type="file"
-              accept="image/*,.pdf"
+              accept="image/*,.pdf,.svg"
               onChange={handleFileChange}
               className="sr-only"
             />
@@ -129,7 +128,7 @@ export default function TaskInput({
             <span className="text-xs text-muted-foreground">
               {fileName
                 ? "File selected"
-                : "PNG, JPG, or PDF — stays on this machine"}
+                : "PNG, JPG, PDF, or SVG — stays on this machine"}
             </span>
           </label>
         </div>

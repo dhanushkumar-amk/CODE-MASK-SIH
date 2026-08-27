@@ -23,7 +23,7 @@ MODEL_MAP = {
 # Default generation parameters.
 DEFAULT_GENERATION_PARAMS = {
     "temperature": 0.2,
-    "max_tokens": 2048,
+    "num_predict": 1024,
 }
 
 # Ollama request timeout in seconds.
