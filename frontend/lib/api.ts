@@ -87,6 +87,39 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/** Upload a file (scan/document) to the backend workspace. */
+export async function uploadFile(file: File): Promise<{ filename: string; message: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${BACKEND_URL}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch {
+    throw new ApiError(
+      "Cannot reach the backend at localhost:8000. Is it running?"
+    );
+  }
+
+  if (!response.ok) {
+    let detail = `Upload failed with status ${response.status}`;
+    try {
+      const parsed = await response.json();
+      if (parsed && typeof parsed.detail === "string") {
+        detail = parsed.detail;
+      }
+    } catch {
+      // Non-JSON error body
+    }
+    throw new ApiError(detail, response.status);
+  }
+
+  return response.json();
+}
+
 /** Send a task to the router; returns the routing decision. */
 export function routeTask(task: string): Promise<RouteResult> {
   return postJson<RouteResult>("/route", { task });

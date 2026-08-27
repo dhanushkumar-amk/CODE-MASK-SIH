@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { ApiError, routeTask, runAgentStream, type AgentStreamEvent, type RouteResult } from "@/lib/api";
+import { ApiError, routeTask, runAgentStream, uploadFile, type AgentStreamEvent, type RouteResult } from "@/lib/api";
 
 export default function TaskInput({
   onAgentEvent,
@@ -14,6 +14,7 @@ export default function TaskInput({
   onAgentEvent?: (event: AgentStreamEvent) => void;
 }) {
   const [taskText, setTaskText] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +26,7 @@ export default function TaskInput({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
+    setSelectedFile(file);
     setFileName(file ? file.name : null);
   };
 
@@ -38,6 +40,10 @@ export default function TaskInput({
     setSubmitting(true);
 
     try {
+      if (selectedFile) {
+        await uploadFile(selectedFile);
+      }
+
       const rawText = taskText.trim();
       let goal = rawText;
       if (fileName) {

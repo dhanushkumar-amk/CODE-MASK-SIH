@@ -48,6 +48,37 @@ def health():
     return {"status": "ok"}
 
 
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a scan or document file directly into the backend workspace/ directory.
+
+    Allows the frontend to send raw files (PNG, JPG, PDF, SVG, TXT) so on-device OCR
+    and document tools can process them.
+    """
+    filename = file.filename or "uploaded_file"
+    safe_path = _resolve_safe(filename)
+    if safe_path is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file path: {filename}",
+        )
+
+    try:
+        content = await file.read()
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+        safe_path.write_bytes(content)
+        return {
+            "status": "success",
+            "filename": safe_path.name,
+            "message": f"File '{safe_path.name}' uploaded successfully",
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save uploaded file: {exc}",
+        )
+
+
 @app.get("/network-status")
 def network_status():
     """Current network counters for the live frontend panel.

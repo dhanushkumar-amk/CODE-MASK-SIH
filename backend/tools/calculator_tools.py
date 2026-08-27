@@ -28,6 +28,7 @@ _SAFE_FUNCTIONS = {
     "max": max,
     "sum": sum,
 }
+_SAFE_METHODS = {"split", "strip", "lower", "upper", "count", "replace"}
 
 
 def _validate_node(node: ast.AST, in_call_arg: bool = False) -> str | None:
@@ -61,15 +62,28 @@ def _validate_node(node: ast.AST, in_call_arg: bool = False) -> str | None:
                 return err
         return None
     if isinstance(node, ast.Call):
-        if not isinstance(node.func, ast.Name) or node.func.id not in _SAFE_FUNCTIONS:
-            func_name = node.func.id if isinstance(node.func, ast.Name) else type(node.func).__name__
-            return f"function call not allowed: {func_name}"
+        if isinstance(node.func, ast.Name):
+            if node.func.id not in _SAFE_FUNCTIONS:
+                return f"function call not allowed: {node.func.id}"
+        elif isinstance(node.func, ast.Attribute):
+            if node.func.attr not in _SAFE_METHODS:
+                return f"method not allowed: {node.func.attr}"
+            err = _validate_node(node.func.value, in_call_arg=True)
+            if err:
+                return err
+        else:
+            return f"function call not allowed: {type(node.func).__name__}"
+
         for arg in node.args:
             err = _validate_node(arg, in_call_arg=True)
             if err:
                 return err
         return None
-    # Names, Attributes, Subscripts, imports... anything else.
+    if isinstance(node, ast.Attribute):
+        if node.attr not in _SAFE_METHODS:
+            return f"attribute not allowed: {node.attr}"
+        return _validate_node(node.value, in_call_arg=True)
+    # Names, Subscripts, imports... anything else.
     return f"expression element not allowed: {type(node).__name__}"
 
 
