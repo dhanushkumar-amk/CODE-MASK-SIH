@@ -1,22 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Loader2, Minus, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AgentRunResult, AgentStep } from "@/lib/api";
 
-type StepStatus = AgentStep["status"] | "pending";
+type StepStatus = AgentStep["status"];
 
 /**
  * Vertical timeline of agent steps: numbered nodes joined by a thin line,
  * each with a grayscale status badge and an expandable raw-detail section.
  *
- * Driven by live events from POST /agent/run/stream: plan_ready seeds the
- * plan rows (rendered as pending), step_start adds a running row, and
- * step_complete fills in its outcome. Each newly added row animates in
- * with a subtle fade/slide so the trace visibly grows in real time.
+ * Driven by live events from POST /agent/run/stream: the plan preview
+ * appears at plan_ready, then each step_start mounts a "running" row and
+ * the matching step_complete fills in its outcome in place. Rows are
+ * keyed by index, so newly mounted rows animate in once while status
+ * updates never re-trigger the animation.
  */
 export default function ExecutionTrace({
   result,
@@ -25,36 +26,15 @@ export default function ExecutionTrace({
   result: AgentRunResult;
   isStreaming?: boolean;
 }) {
-  // The results array from the streaming state is the source of truth:
-  // it holds running placeholders and completed entries in order. Plan
-  // rows without a matching result yet render as pending.
-  const steps: {
-    number: number;
-    planText: string;
-    status: StepStatus;
-    entry?: AgentStep;
-  }[] = result.plan.map((planText, index) => {
-    const entry = result.results[index];
-    return {
-      number: index + 1,
-      planText,
-      status: entry ? entry.status : "pending",
-      entry,
-    };
-  });
-
-  // Executed steps with no corresponding plan row (e.g. the final
-  // synthesis turn) still get a row so nothing is hidden.
-  result.results.forEach((entry, index) => {
-    if (index >= steps.length) {
-      steps.push({
-        number: index + 1,
-        planText: entry.step,
-        status: entry.status,
-        entry,
-      });
-    }
-  });
+  // Rows are built ONLY from started/completed steps so the trace grows
+  // one row at a time as events arrive; the plan itself is the compact
+  // preview above the timeline.
+  const steps = result.results.map((entry, index) => ({
+    number: index + 1,
+    planText: entry.step,
+    status: entry.status,
+    entry,
+  }));
 
   const completedSteps = result.results.filter((r) => r.status === "done").length;
   const totalSteps = Math.max(steps.length, result.plan.length);
@@ -74,6 +54,17 @@ export default function ExecutionTrace({
               : " · incomplete"}
         </span>
       </div>
+
+      {result.plan.length > 0 && (
+        <ol className="mb-4 flex animate-in fade-in duration-300 flex-col gap-1 rounded-lg border border-border bg-white px-4 py-3">
+          {result.plan.map((step, index) => (
+            <li key={index} className="flex gap-2 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{index + 1}.</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <ol className="relative ml-4 list-none border-l border-border">
         {steps.map((step, index) => (
@@ -101,11 +92,10 @@ function StepRow({
   number: number;
   planText: string;
   status: StepStatus;
-  entry?: AgentRunResult["results"][number];
+  entry: AgentStep;
   isLast: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const hasDetail = Boolean(entry);
 
   return (
     <li
@@ -132,10 +122,8 @@ function StepRow({
           <Check className="size-2" strokeWidth={3} />
         ) : status === "failed" ? (
           <X className="size-2" strokeWidth={3} />
-        ) : status === "running" ? (
-          <Loader2 className="size-2 animate-spin" />
         ) : (
-          <Minus className="size-2" strokeWidth={3} />
+          <Loader2 className="size-2 animate-spin" />
         )}
       </span>
 
@@ -150,27 +138,25 @@ function StepRow({
 
         <p className="text-sm text-foreground">{planText}</p>
 
-        {entry?.reasoning && (
+        {entry.reasoning && (
           <p className="text-xs italic text-muted-foreground">
             {entry.reasoning}
           </p>
         )}
 
-        {hasDetail && (
-          <button
-            type="button"
-            onClick={() => setOpen((prev) => !prev)}
-            className="flex items-center gap-1 self-start text-xs text-muted-foreground hover:text-foreground"
-            aria-expanded={open}
-          >
-            <ChevronDown
-              className={cn("size-3 transition-transform", open && "rotate-180")}
-            />
-            {open ? "Hide detail" : "Show detail"}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex items-center gap-1 self-start text-xs text-muted-foreground hover:text-foreground"
+          aria-expanded={open}
+        >
+          <ChevronDown
+            className={cn("size-3 transition-transform", open && "rotate-180")}
+          />
+          {open ? "Hide detail" : "Show detail"}
+        </button>
 
-        {open && entry && (
+        {open && (
           <div className="mt-1 flex flex-col gap-2 rounded-md bg-muted/50 p-3 font-mono text-xs">
             {entry.tool_input != null && (
               <div>
@@ -222,12 +208,6 @@ function StatusBadge({ status }: { status: StepStatus }) {
         <Badge variant="secondary" className="gap-1">
           <Loader2 className="size-3 animate-spin" />
           running
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="secondary" className="text-muted-foreground">
-          pending
         </Badge>
       );
   }
