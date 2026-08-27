@@ -13,7 +13,9 @@ export interface RouteResult {
 /** One step of the agent loop trace (POST /agent/run result entry). */
 export interface AgentStep {
   step: string;
-  status: "done" | "failed";
+  /** "done" | "failed" from the backend; "running" is a UI-only state
+      applied while the step's model call is in flight. */
+  status: "done" | "failed" | "running";
   /** "tool_call" | "final_answer" | null. */
   action_type: string | null;
   output: string;
@@ -110,6 +112,7 @@ export async function runAgent(goal: string): Promise<AgentRunResult> {
 
 /** Event frames emitted by POST /agent/run/stream (SSE over fetch). */
 export type AgentStreamEvent =
+  | { event: "run_started"; goal: string }
   | {
       event: "plan_ready";
       goal: string;
@@ -123,14 +126,25 @@ export type AgentStreamEvent =
   | ({
       event: "step_complete";
       step_number: number;
-    } & WireAgentStep)
+    } & AgentStep)
   | ({
+      event: "done";
+    } & AgentRunResult)
+  | { event: "error"; message: string };
+
+/** Raw wire frames before normalization (step/done carry "action"). */
+type WireStreamEvent =
+  | { event: "run_started"; goal: string }
+  | { event: "plan_ready"; goal: string; plan: string[] }
+  | { event: "step_start"; step_number: number; step: string }
+  | ({ event: "step_complete"; step_number: number } & WireAgentStep)
+  | {
       event: "done";
       goal: string;
       plan: string[];
       results: WireAgentStep[];
       completed: boolean;
-    })
+    }
   | { event: "error"; message: string };
 
 /**
@@ -181,7 +195,7 @@ export async function runAgentStream(
 
   // Normalize wire events to UI events at the API boundary: step_complete
   // and done results carry "action", the UI type uses "action_type".
-  const emit = (event: AgentStreamEvent) => {
+  const emit = (event: WireStreamEvent) => {
     if (event.event === "step_complete") {
       const { step_number, ...wire } = event;
       onEvent({ event: "step_complete", step_number, ...toUiStep(wire) });
@@ -215,7 +229,7 @@ export async function runAgentStream(
             typeof parsed === "object" &&
             "event" in parsed
           ) {
-            emit(parsed as AgentStreamEvent);
+            emit(parsed as WireStreamEvent);
           }
         } catch {
           // Ignore malformed frames; the stream continues.

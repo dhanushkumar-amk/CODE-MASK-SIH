@@ -5,37 +5,40 @@ import { Check, ChevronDown, Loader2, Minus, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { AgentRunResult } from "@/lib/api";
+import type { AgentRunResult, AgentStep } from "@/lib/api";
 
-type StepStatus = "pending" | "running" | "done" | "failed";
+type StepStatus = AgentStep["status"] | "pending";
 
 /**
  * Vertical timeline of agent steps: numbered nodes joined by a thin line,
  * each with a grayscale status badge and an expandable raw-detail section.
  *
- * NOTE: the /agent/run endpoint returns the full trace only after the whole
- * agent loop finishes, so all steps render at once with final statuses.
- * True step-by-step streaming (live "running" updates) arrives in the next
- * phase via Server-Sent Events or a similar streaming approach; the
- * pending/running states are already rendered here so the switch is visual
- * only.
+ * Driven by live events from POST /agent/run/stream: plan_ready seeds the
+ * plan rows (rendered as pending), step_start adds a running row, and
+ * step_complete fills in its outcome. Each newly added row animates in
+ * with a subtle fade/slide so the trace visibly grows in real time.
  */
-export default function ExecutionTrace({ result }: { result: AgentRunResult }) {
+export default function ExecutionTrace({
+  result,
+  isStreaming = false,
+}: {
+  result: AgentRunResult;
+  isStreaming?: boolean;
+}) {
+  // The results array from the streaming state is the source of truth:
+  // it holds running placeholders and completed entries in order. Plan
+  // rows without a matching result yet render as pending.
   const steps: {
     number: number;
     planText: string;
     status: StepStatus;
-    entry?: AgentRunResult["results"][number];
+    entry?: AgentStep;
   }[] = result.plan.map((planText, index) => {
     const entry = result.results[index];
     return {
       number: index + 1,
       planText,
-      status: entry
-        ? entry.status === "done"
-          ? "done"
-          : "failed"
-        : "pending",
+      status: entry ? entry.status : "pending",
       entry,
     };
   });
@@ -47,14 +50,14 @@ export default function ExecutionTrace({ result }: { result: AgentRunResult }) {
       steps.push({
         number: index + 1,
         planText: entry.step,
-        status: entry.status === "done" ? "done" : "failed",
+        status: entry.status,
         entry,
       });
     }
   });
 
   const completedSteps = result.results.filter((r) => r.status === "done").length;
-  const totalSteps = steps.length;
+  const totalSteps = Math.max(steps.length, result.plan.length);
 
   return (
     <section className="w-full">
@@ -64,7 +67,11 @@ export default function ExecutionTrace({ result }: { result: AgentRunResult }) {
         </h2>
         <span className="text-xs text-muted-foreground">
           {completedSteps}/{totalSteps} steps done
-          {result.completed ? " · completed" : " · incomplete"}
+          {isStreaming
+            ? " · running"
+            : result.completed
+              ? " · completed"
+              : " · incomplete"}
         </span>
       </div>
 
@@ -101,7 +108,14 @@ function StepRow({
   const hasDetail = Boolean(entry);
 
   return (
-    <li className={cn("relative flex gap-4 pl-6", isLast ? "pb-0" : "pb-6")}>
+    <li
+      className={cn(
+        // Newly mounted rows fade/slide in; existing rows keep their key
+        // (index), so status updates never re-trigger the animation.
+        "relative flex gap-4 pl-6 animate-in fade-in slide-in-from-bottom-2 duration-300",
+        isLast ? "pb-0" : "pb-6"
+      )}
+    >
       {/* Node marker, centered on the vertical line. */}
       <span
         className={cn(

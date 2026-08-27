@@ -186,6 +186,8 @@ def run_agent_stream(goal: str, max_steps: int = 6):
                 loop continues. Two consecutive failures abort the run.
 
     Yields, in order:
+      - {"event": "run_started", "goal"} immediately, so a live UI can
+        show the trace section the moment the request lands,
       - {"event": "plan_ready", "goal", "plan"} right after planning,
       - {"event": "step_start", "step_number", "step"} before each step's
         model call, so a live UI can show the step as running,
@@ -195,6 +197,8 @@ def run_agent_stream(goal: str, max_steps: int = 6):
 
     Never raises; the final "done" event is always emitted.
     """
+    yield {"event": "run_started", "goal": goal}
+
     plan = _plan(goal)[:max_steps]
     yield {"event": "plan_ready", "goal": goal, "plan": plan}
 
