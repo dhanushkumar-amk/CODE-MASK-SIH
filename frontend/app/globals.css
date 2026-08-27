@@ -3,92 +3,98 @@
 @import "shadcn/tailwind.css";
 
 /*
- * HIGH-END INDUSTRIAL LIGHT THEME & TECHNICAL CONSOLE DESIGN SYSTEM
- * Pure White background (#FFFFFF), Crisp Slate UI (#0F172A), Emerald & Cobalt Accents
+ * LINEAR-STYLE PREMIUM DARK THEME DESIGN SYSTEM
+ * Deep Obsidian (#08090A), Card Surface (#14151A), Hairline Borders (#26272D), High-Contrast Pure White (#FFFFFF)
  */
 
-@custom-variant dark (&:is(.never-dark *));
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
+  --color-background: #08090a;
+  --color-foreground: #f7f8f8;
   --font-sans: var(--font-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
 
-  --color-ring: #2563eb;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
+  --color-ring: #ffffff;
+  --color-border: #26272d;
+  --color-input: #26272d;
 
-  --color-primary: #0f172a;
-  --color-primary-foreground: #ffffff;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #08090a;
 
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
+  --color-secondary: #18191e;
+  --color-secondary-foreground: #f7f8f8;
 
-  --color-muted: #f8fafc;
-  --color-muted-foreground: #64748b;
+  --color-muted: #121318;
+  --color-muted-foreground: #8a8f98;
 
-  --color-accent: #eff6ff;
-  --color-accent-foreground: #1e40af;
+  --color-accent: #1e1f26;
+  --color-accent-foreground: #f7f8f8;
 
-  --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
+  --color-card: #14151a;
+  --color-card-foreground: #f7f8f8;
+  --color-popover: #14151a;
+  --color-popover-foreground: #f7f8f8;
 
-  --radius-sm: 0px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --background: #08090a;
+  --foreground: #f7f8f8;
+  --card: #14151a;
+  --card-foreground: #f7f8f8;
+  --popover: #14151a;
+  --popover-foreground: #f7f8f8;
 
-  --primary: #0f172a;
-  --primary-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #08090a;
 
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
+  --secondary: #18191e;
+  --secondary-foreground: #f7f8f8;
 
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
+  --muted: #121318;
+  --muted-foreground: #8a8f98;
 
-  --accent: #eff6ff;
-  --accent-foreground: #1e40af;
+  --accent: #1e1f26;
+  --accent-foreground: #f7f8f8;
 
-  --destructive: #0f172a;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
+  --border: #26272d;
+  --input: #26272d;
+  --ring: #ffffff;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-/* Subtle Technical Grid Background Pattern */
-.bg-tech-grid {
-  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+/* Subtle Dark Grid Overlay */
+.bg-dark-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Glowing Live Status Pulse */
-@keyframes pulse-live {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.9); }
+/* Linear Glow Effects */
+.glow-subtle {
+  box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.05);
 }
 
-.animate-pulse-live {
-  animation: pulse-live 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Smooth Pulse Animation */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.85); }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse-live {
+  .animate-pulse-dot {
     animation: none;
     opacity: 1;
   }

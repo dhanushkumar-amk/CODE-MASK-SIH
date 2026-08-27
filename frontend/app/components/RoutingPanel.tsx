@@ -10,24 +10,24 @@ export default function RoutingPanel({ route }: { route: RouteResult }) {
     : new Date().toLocaleTimeString();
 
   return (
-    <Card className="w-full border-neutral-300 bg-white p-3.5 sm:px-5 font-mono text-xs shadow-none rounded-none">
+    <Card className="w-full border-[#26272D] bg-[#14151A] p-4 sm:px-6 font-mono text-xs shadow-xl shadow-black/40 rounded-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-neutral-500 font-semibold uppercase tracking-wider">
+          <span className="text-[#8A8F98] font-semibold uppercase tracking-wider text-[11px]">
             ROUTED TO:
           </span>
-          <span className="font-bold text-neutral-950 uppercase tracking-tight">
+          <span className="font-bold text-white uppercase tracking-tight text-xs">
             {route.model || "qwen2.5:1.5b-instruct"}
           </span>
           <Badge
             variant="outline"
-            className="border-neutral-950 text-neutral-950 font-mono text-[10px] uppercase tracking-wider rounded-none bg-white px-2 py-0.5"
+            className="border-[#2E303A] text-white font-mono text-[10px] uppercase tracking-wider rounded-full bg-[#181920] px-3 py-0.5"
           >
             [{route.task_type || "GENERAL_TASK"}]
           </Badge>
         </div>
-        <div className="flex items-center gap-2 text-neutral-500 text-[11px]">
-          <span className="h-1.5 w-1.5 rounded-full bg-neutral-950" />
+        <div className="flex items-center gap-2 text-[#8A8F98] text-[11px]">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-dot" />
           <span>TIMESTAMP: {formattedTime}</span>
         </div>
       </div>
