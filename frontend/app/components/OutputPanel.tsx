@@ -77,15 +77,21 @@ export default function OutputPanel({
   };
 
   // Detect code snippet from string content
-  const isCodeSnippet = (text: string) => {
-    if (text.includes("```")) return true;
-    const codeKeywords = ["def ", "import ", "if __name__", "print(", "class ", "public class", "void main", "System.out.print", "num = ", "% 2 ==", "return "];
-    const matchCount = codeKeywords.filter((kw) => text.includes(kw)).length;
-    return matchCount >= 2;
-  };
+  // Extract text and code parts cleanly
+  let displayCode = codeResult;
+  let displayText = output || "";
 
-  const displayCode = codeResult || (output && isCodeSnippet(output) ? output : null);
-  const displayText = output && !isCodeSnippet(output) && !codeResult ? output : null;
+  if (output && output.includes("```")) {
+    const codeMatch = output.match(/```[\s\S]*?```/g);
+    if (codeMatch && !displayCode) {
+      displayCode = codeMatch.join("\n\n");
+    }
+    displayText = output.replace(/```[\s\S]*?```/g, "").trim();
+  } else if (displayCode && output) {
+    if (output.trim() === displayCode.trim()) {
+      displayText = "";
+    }
+  }
 
   // Clean raw markdown backticks if present
   const cleanCode = displayCode ? displayCode.replace(/^```[\w]*\n?/, "").replace(/\n?```$/, "").trim() : "";
@@ -107,7 +113,7 @@ export default function OutputPanel({
 
       <div className="flex flex-col gap-3 flex-1 min-w-0">
         {/* Regular Text Response */}
-        {displayText && (
+        {displayText.trim().length > 0 && (
           <div className="text-sm leading-relaxed text-slate-800 font-sans whitespace-pre-wrap">
             {displayText}
           </div>

@@ -9,6 +9,7 @@ import { type HistoryItem } from "@/app/components/HistoryDrawer";
 import { User, CheckCircle2, Sparkles } from "lucide-react";
 import { playCompletionChime } from "@/lib/sound";
 import { addAdminAuditLog } from "@/lib/adminLog";
+import { getActiveUserSession, type UserAccount } from "@/lib/userAuth";
 import {
   type AgentRunResult,
   type AgentStreamEvent,
@@ -24,16 +25,19 @@ export default function Home() {
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [runsMap, setRunsMap] = useState<Record<string, AgentRunResult>>({});
+  const [activeUser, setActiveUser] = useState<UserAccount | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load history from localStorage on mount
+  // Load history & user session from localStorage on mount
   useEffect(() => {
     try {
       const savedHist = localStorage.getItem("fortexa_history_items");
       const savedMap = localStorage.getItem("fortexa_history_map");
       if (savedHist) setHistory(JSON.parse(savedHist));
       if (savedMap) setRunsMap(JSON.parse(savedMap));
+      const currUser = getActiveUserSession();
+      setActiveUser(currUser);
     } catch (e) {
       console.warn("Failed to load session history from storage", e);
     }
@@ -179,13 +183,13 @@ export default function Home() {
     if (!agentResult) return null;
     let filename: string | null = null;
     let codeResult: string | null = null;
-    let textOutput = "";
-
-    const lastStep = agentResult.results[agentResult.results.length - 1];
+    const stepOutputs: string[] = [];
 
     for (const step of agentResult.results) {
       if (step.output) {
-        textOutput += step.output + "\n\n";
+        if (!stepOutputs.includes(step.output)) {
+          stepOutputs.push(step.output);
+        }
 
         // Check for generated files in output or tool input
         const match = step.output.match(/\b([\w-]+\.(pptx|docx|xlsx|csv|pdf|txt|json|py|html))\b/i);
@@ -207,7 +211,7 @@ export default function Home() {
     return {
       filename,
       codeResult,
-      output: lastStep?.output || textOutput.trim(),
+      output: stepOutputs.join("\n\n").trim(),
     };
   };
 
@@ -224,6 +228,7 @@ export default function Home() {
         history={history}
         onSelectRun={handleSelectHistoryRun}
         onClearHistory={handleClearHistory}
+        onUserChanged={(u) => setActiveUser(u)}
       />
 
       {/* Scrollable Conversation Stream Window */}
@@ -310,8 +315,13 @@ export default function Home() {
                 <div className="bg-slate-200/70 text-slate-900 px-4 py-2.5 rounded-2xl rounded-tr-xs max-w-xl text-sm font-medium leading-relaxed shadow-2xs">
                   {agentResult.goal}
                 </div>
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-700 font-bold text-xs mt-0.5">
-                  <User className="h-3.5 w-3.5 text-slate-700" />
+                <div
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                    activeUser ? `${activeUser.avatarColor} text-white` : "bg-slate-200 text-slate-700"
+                  } font-bold text-xs mt-0.5 shadow-2xs`}
+                  title={activeUser?.name || "User"}
+                >
+                  {activeUser ? activeUser.name.charAt(0).toUpperCase() : <User className="h-3.5 w-3.5 text-slate-700" />}
                 </div>
               </div>
 

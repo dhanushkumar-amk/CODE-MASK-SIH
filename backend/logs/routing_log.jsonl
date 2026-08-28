@@ -104,3 +104,17 @@
 {"task": "define machine learning", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T07:18:05.369241"}
 {"task": "what is ai", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T07:52:34.876557"}
 {"task": "what is ai", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T08:01:38.242365"}
+{"task": "write simple java code to find whatever given number is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T09:54:53.684303"}
+{"task": "extract the text from the image (attached file: download.png)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T09:56:01.635289"}
+{"task": "what this image says (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:08:41.487395"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:14:37.818103"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:14:58.866365"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:15:07.451587"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:19:58.200854"}
+{"task": "write a simple java code whatever the given number is happy numbe ror not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:23:27.126498"}
+{"task": "list out first 100 empoyee name (attached file: Dummy_5000_Employee_Details_Dataset.csv)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:30:11.245840"}
+{"task": "extract the text (attached file: download.jpeg)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:33:46.695869"}
+{"task": "generate the pdf with title what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:35:03.277067"}
+{"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:36:20.378234"}
+{"task": "write the simple java code check the given numbe is odd or even", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:36:48.680907"}
+{"task": "extract the text from the given image (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:37:26.944130"}

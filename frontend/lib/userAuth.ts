@@ -1,11 +1,12 @@
 /**
  * Local Air-Gapped User Authentication & User Session Manager.
- * Handles local user registration, login, logout, and active user session.
  */
 
 export interface UserAccount {
   id: string;
   name: string;
+  username: string;
+  password?: string;
   email: string;
   role: "Engineer" | "Operator" | "Analyst" | "Admin";
   avatarColor: string;
@@ -15,29 +16,15 @@ export interface UserAccount {
 const USERS_KEY = "fortexa_local_users";
 const SESSION_KEY = "fortexa_active_user_session";
 
-const DEFAULT_USERS: UserAccount[] = [
+export const DEFAULT_USERS: UserAccount[] = [
   {
     id: "usr_1",
-    name: "Alex Vance",
-    email: "alex.vance@fortexa.local",
+    name: "User 1",
+    username: "user1",
+    password: "12345678",
+    email: "user1@fortexa.local",
     role: "Engineer",
     avatarColor: "bg-blue-600",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "usr_2",
-    name: "Elena Rostova",
-    email: "elena.rostova@fortexa.local",
-    role: "Operator",
-    avatarColor: "bg-emerald-600",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "usr_3",
-    name: "David Chen",
-    email: "david.chen@fortexa.local",
-    role: "Analyst",
-    avatarColor: "bg-indigo-600",
     createdAt: new Date().toISOString(),
   },
 ];
@@ -52,22 +39,36 @@ export function getRegisteredUsers(): UserAccount[] {
       return DEFAULT_USERS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_USERS;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Ensure backwards compatibility with old localStorage objects missing username
+      return parsed.map((u, i) => ({
+        ...u,
+        username: u.username || `user${i + 1}`,
+        password: u.password || "12345678",
+      }));
+    }
+    localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
+    return DEFAULT_USERS;
   } catch {
     return DEFAULT_USERS;
   }
 }
 
-/** Get currently active logged-in user session */
-export function getActiveUserSession(): UserAccount {
+/** Get currently active logged-in user session (or null if none) */
+export function getActiveUserSession(): UserAccount | null {
   if (typeof window === "undefined") return DEFAULT_USERS[0];
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.email) return parsed;
+      if (parsed && (parsed.email || parsed.username)) {
+        return {
+          ...parsed,
+          username: parsed.username || "user1",
+          password: parsed.password || "12345678",
+        };
+      }
     }
-    // Default active user
     const users = getRegisteredUsers();
     const defaultUser = users[0];
     localStorage.setItem(SESSION_KEY, JSON.stringify(defaultUser));
@@ -83,29 +84,22 @@ export function setActiveUserSession(user: UserAccount) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 }
 
-/** Register a new local user account */
-export function registerUserAccount(name: string, email: string, role: UserAccount["role"] = "Engineer"): UserAccount {
+/** Authenticate user by username/email and password */
+export function authenticateUser(usernameOrEmail: string, passwordInput: string): UserAccount | null {
   const users = getRegisteredUsers();
-  const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
-  if (existing) {
-    setActiveUserSession(existing);
-    return existing;
+  const query = (usernameOrEmail || "").toLowerCase().trim();
+  const matched = users.find(
+    (u) =>
+      u &&
+      (((u.username || "").toLowerCase() === query) ||
+       ((u.email || "").toLowerCase() === query)) &&
+      u.password === passwordInput
+  );
+  if (matched) {
+    setActiveUserSession(matched);
+    return matched;
   }
-
-  const colors = ["bg-blue-600", "bg-emerald-600", "bg-indigo-600", "bg-purple-600", "bg-amber-600", "bg-teal-600"];
-  const newUser: UserAccount = {
-    id: `usr_${Date.now()}`,
-    name: name.trim(),
-    email: email.toLowerCase().trim(),
-    role,
-    avatarColor: colors[Math.floor(Math.random() * colors.length)],
-    createdAt: new Date().toISOString(),
-  };
-
-  const updated = [newUser, ...users];
-  localStorage.setItem(USERS_KEY, JSON.stringify(updated));
-  setActiveUserSession(newUser);
-  return newUser;
+  return null;
 }
 
 /** Log out current user session */

@@ -10,6 +10,7 @@ export default function Navbar({
   history = [],
   onSelectRun,
   onClearHistory,
+  onUserChanged,
 }: {
   onResetConsole?: () => void;
   tasksCompleted?: number;
@@ -18,6 +19,7 @@ export default function Navbar({
   history?: HistoryItem[];
   onSelectRun?: (item: HistoryItem) => void;
   onClearHistory?: () => void;
+  onUserChanged?: (user: any) => void;
 }) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/90 backdrop-blur-md">
@@ -42,7 +44,7 @@ export default function Navbar({
           </span>
         </button>
 
-        {/* Right Side: Session Log, User Profile & New Chat Button */}
+        {/* Right Side: Session Log & User Profile */}
         <div className="flex items-center gap-2.5">
           <HistoryDrawer
             history={history}
@@ -50,17 +52,7 @@ export default function Navbar({
             onClearHistory={onClearHistory}
           />
 
-          <UserAuthModal />
-
-          {onResetConsole && (
-            <button
-              onClick={onResetConsole}
-              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-xs active:scale-95"
-            >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
-              <span>New chat</span>
-            </button>
-          )}
+          <UserAuthModal onUserChanged={onUserChanged} />
         </div>
       </div>
     </header>
