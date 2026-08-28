@@ -157,6 +157,19 @@ function AuditDrawer({ log, onClose }: { log: AdminLogItem; onClose: () => void 
           <div className="space-y-4 text-xs">
             <div>
               <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+                Executed By User
+              </span>
+              <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-slate-900 text-xs block">{log.user_name || "Alex Vance"}</span>
+                  <span className="font-mono text-[10px] text-blue-700">{log.user_email || "alex.vance@fortexa.local"}</span>
+                </div>
+                <UserCheck className="h-4 w-4 text-blue-600 shrink-0" />
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
                 Prompt Input
               </span>
               <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl font-medium text-slate-900 leading-relaxed">
@@ -256,6 +269,7 @@ export default function AdminPage() {
   const [routingLogs, setRoutingLogs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [taskFilter, setTaskFilter] = useState<string>("all");
+  const [userFilter, setUserFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"overview" | "prompts" | "routing" | "tools">("overview");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<AdminLogItem | null>(null);
@@ -382,15 +396,28 @@ export default function AdminPage() {
     };
   }, [logs]);
 
+  const uniqueUsers = useMemo(() => {
+    const map = new Map<string, string>();
+    logs.forEach((l) => {
+      if (l.user_email) {
+        map.set(l.user_email, l.user_name || l.user_email);
+      }
+    });
+    return Array.from(map.entries()).map(([email, name]) => ({ email, name }));
+  }, [logs]);
+
   const filteredLogs = logs.filter((l) => {
     const matchesSearch =
       l.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.tools_used.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (l.deliverable && l.deliverable.toLowerCase().includes(searchQuery.toLowerCase()));
+      (l.deliverable && l.deliverable.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (l.user_name && l.user_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (l.user_email && l.user_email.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesFilter = taskFilter === "all" || l.task_type === taskFilter;
+    const matchesTask = taskFilter === "all" || l.task_type === taskFilter;
+    const matchesUser = userFilter === "all" || l.user_email === userFilter;
 
-    return matchesSearch && matchesFilter;
+    return matchesSearch && matchesTask && matchesUser;
   });
 
   /* ─────────────────────────────────────────────────────────────────
@@ -670,22 +697,35 @@ export default function AdminPage() {
         {activeTab === "prompts" && (
           <div className="space-y-4 animate-in fade-in duration-150">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1 max-w-sm">
+              <div className="flex items-center gap-2 flex-1 max-w-md">
                 <div className="relative flex-1">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search logs by prompt or tool..."
+                    placeholder="Search logs, user, prompt or tool..."
                     className="w-full bg-white border border-slate-200/80 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-900 focus:outline-hidden focus:border-slate-900 transition-colors"
                   />
                   <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-2.5" />
                 </div>
 
                 <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className="bg-white border border-slate-200/80 text-slate-700 text-xs rounded-xl px-2.5 py-2 focus:outline-hidden focus:border-slate-900 cursor-pointer font-medium max-w-[130px] truncate"
+                >
+                  <option value="all">All Users</option>
+                  {uniqueUsers.map((u) => (
+                    <option key={u.email} value={u.email}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
                   value={taskFilter}
                   onChange={(e) => setTaskFilter(e.target.value)}
-                  className="bg-white border border-slate-200/80 text-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-hidden focus:border-slate-900 cursor-pointer font-medium"
+                  className="bg-white border border-slate-200/80 text-slate-700 text-xs rounded-xl px-2.5 py-2 focus:outline-hidden focus:border-slate-900 cursor-pointer font-medium max-w-[110px]"
                 >
                   <option value="all">All Types</option>
                   <option value="document">Document</option>
@@ -721,6 +761,7 @@ export default function AdminPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4">User</th>
                       <th className="py-3 px-4">Time</th>
                       <th className="py-3 px-4">Prompt</th>
                       <th className="py-3 px-4">Type</th>
@@ -733,6 +774,16 @@ export default function AdminPage() {
                     {filteredLogs.length > 0 ? (
                       filteredLogs.map((log) => (
                         <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
+                                {(log.user_name || "A").charAt(0)}
+                              </span>
+                              <span className="font-semibold text-slate-800 truncate max-w-[110px]" title={log.user_email}>
+                                {log.user_name || log.user_email || "Alex Vance"}
+                              </span>
+                            </div>
+                          </td>
                           <td className="py-3 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </td>
@@ -771,7 +822,7 @@ export default function AdminPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                        <td colSpan={7} className="py-8 text-center text-slate-400">
                           No audit entries found
                         </td>
                       </tr>

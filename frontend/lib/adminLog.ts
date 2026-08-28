@@ -3,6 +3,8 @@
  * Stores and manages the last 30 local prompt executions, tool calls, and commands.
  */
 
+import { getActiveUserSession } from "./userAuth";
+
 export interface AdminLogItem {
   id: string;
   timestamp: string;
@@ -13,6 +15,8 @@ export interface AdminLogItem {
   deliverable?: string | null;
   status: "success" | "failed";
   provenance_hash?: string;
+  user_email?: string;
+  user_name?: string;
 }
 
 const LOG_KEY = "fortexa_admin_audit_logs";
@@ -25,7 +29,7 @@ export function getAdminAuditLogs(): AdminLogItem[] {
     const raw = localStorage.getItem(LOG_KEY);
     if (!raw) return getInitialDemoLogs();
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : getInitialDemoLogs();
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : getInitialDemoLogs();
   } catch {
     return getInitialDemoLogs();
   }
@@ -36,6 +40,7 @@ export function addAdminAuditLog(log: Omit<AdminLogItem, "id" | "timestamp"> & {
   if (typeof window === "undefined") return;
   try {
     const existing = getAdminAuditLogs();
+    const activeUser = getActiveUserSession();
     const newEntry: AdminLogItem = {
       id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: log.timestamp || new Date().toISOString(),
@@ -46,6 +51,8 @@ export function addAdminAuditLog(log: Omit<AdminLogItem, "id" | "timestamp"> & {
       deliverable: log.deliverable || null,
       status: log.status || "success",
       provenance_hash: log.provenance_hash || `sha256_${Math.random().toString(36).substring(2, 12)}`,
+      user_email: log.user_email || activeUser?.email || "alex.vance@fortexa.local",
+      user_name: log.user_name || activeUser?.name || "Alex Vance",
     };
 
     const updated = [newEntry, ...existing].slice(0, MAX_LOGS);
@@ -75,6 +82,8 @@ function getInitialDemoLogs(): AdminLogItem[] {
       deliverable: "pipe_inspection_approval_note.docx",
       status: "success",
       provenance_hash: "980aafe1e46633c6...",
+      user_email: "alex.vance@fortexa.local",
+      user_name: "Alex Vance",
     },
     {
       id: "log_demo_2",
@@ -86,6 +95,8 @@ function getInitialDemoLogs(): AdminLogItem[] {
       deliverable: null,
       status: "success",
       provenance_hash: "a665628b686b99ad...",
+      user_email: "elena.rostova@fortexa.local",
+      user_name: "Elena Rostova",
     },
     {
       id: "log_demo_3",
@@ -97,6 +108,8 @@ function getInitialDemoLogs(): AdminLogItem[] {
       deliverable: "inspection_log.xlsx",
       status: "success",
       provenance_hash: "f3f1507a30e8c32b...",
+      user_email: "david.chen@fortexa.local",
+      user_name: "David Chen",
     },
     {
       id: "log_demo_4",
@@ -107,7 +120,9 @@ function getInitialDemoLogs(): AdminLogItem[] {
       tools_used: ["voice_transcribe"],
       deliverable: null,
       status: "success",
-      provenance_hash: "b77eb4c7539aefb...",
+      provenance_hash: "8c772e09b11d95ee...",
+      user_email: "alex.vance@fortexa.local",
+      user_name: "Alex Vance",
     },
   ];
 }

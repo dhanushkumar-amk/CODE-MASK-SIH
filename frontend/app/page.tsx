@@ -109,7 +109,7 @@ export default function Home() {
     } else if (event.event === "done") {
       setAgentResult(event);
       setIsStreaming(false);
-      
+
       // Trigger Completion Audio Chime & Visual Stats
       playCompletionChime();
       setTasksCompleted((prev) => prev + 1);
@@ -117,7 +117,7 @@ export default function Home() {
 
       // Check if file deliverable generated
       let deliverableFile: string | null = null;
-      const fileStep = event.results?.find((step) => 
+      const fileStep = event.results?.find((step) =>
         step.output?.match(/\b([\w-]+\.(pptx|docx|xlsx|csv|pdf|txt|json|py|html))\b/i) ||
         (step.tool_input && typeof step.tool_input === "object" && "output_file" in step.tool_input)
       );
@@ -140,13 +140,13 @@ export default function Home() {
 
       setHistory((prev) => {
         const updated = [newItem, ...prev];
-        try { localStorage.setItem("fortexa_history_items", JSON.stringify(updated)); } catch (e) {}
+        try { localStorage.setItem("fortexa_history_items", JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
 
       setRunsMap((prev) => {
         const updated = { ...prev, [runId]: event };
-        try { localStorage.setItem("fortexa_history_map", JSON.stringify(updated)); } catch (e) {}
+        try { localStorage.setItem("fortexa_history_map", JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
 

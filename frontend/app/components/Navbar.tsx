@@ -3,6 +3,8 @@
 import { Plus, ShieldCheck } from "lucide-react";
 import HistoryDrawer, { type HistoryItem } from "@/app/components/HistoryDrawer";
 
+import UserAuthModal from "@/app/components/UserAuthModal";
+
 export default function Navbar({
   onResetConsole,
   history = [],
@@ -40,13 +42,15 @@ export default function Navbar({
           </span>
         </button>
 
-        {/* Right Side: Session Log & New Chat Button */}
+        {/* Right Side: Session Log, User Profile & New Chat Button */}
         <div className="flex items-center gap-2.5">
           <HistoryDrawer
             history={history}
             onSelectRun={onSelectRun}
             onClearHistory={onClearHistory}
           />
+
+          <UserAuthModal />
 
           {onResetConsole && (
             <button
