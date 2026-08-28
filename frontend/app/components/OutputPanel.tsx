@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { getDownloadUrl } from "@/lib/api";
+import ProvenanceBadge from "./ProvenanceBadge";
 import { exportAsDocx, exportAsPdf, exportAsTxt, exportAsMd } from "@/lib/export";
 import {
   FileText,
@@ -30,6 +31,21 @@ export default function OutputPanel({
   const [copied, setCopied] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false);
+      }
+    }
+    if (showExportMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   const getFileIcon = (fname: string) => {
     const ext = fname.split(".").pop()?.toLowerCase();
@@ -144,9 +160,14 @@ export default function OutputPanel({
           </div>
         )}
 
+        {/* Verified Offline Provenance Audit Badge */}
+        {(displayText || displayCode || filename) && (
+          <ProvenanceBadge filename={filename} />
+        )}
+
         {/* ONE UNIFIED SHARE & EXPORT DROPDOWN MENU */}
         {(displayText || displayCode || filename) && (
-          <div className="relative self-start pt-1">
+          <div ref={menuRef} className="relative self-start pt-1">
             <button
               type="button"
               onClick={() => setShowExportMenu(!showExportMenu)}
@@ -158,7 +179,12 @@ export default function OutputPanel({
 
             {/* Unified Popover Menu */}
             {showExportMenu && (
-              <div className="absolute top-9 left-0 z-50 flex flex-col w-52 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-lg font-sans text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+              <>
+                <div
+                  onClick={() => setShowExportMenu(false)}
+                  className="fixed inset-0 z-40 bg-transparent"
+                />
+                <div className="absolute top-9 left-0 z-50 flex flex-col w-52 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-lg font-sans text-xs animate-in fade-in slide-in-from-top-2 duration-150">
                 <button
                   type="button"
                   onClick={() => {
@@ -247,6 +273,7 @@ export default function OutputPanel({
                   <span>Export as Markdown (.md)</span>
                 </button>
               </div>
+            </>
             )}
           </div>
         )}

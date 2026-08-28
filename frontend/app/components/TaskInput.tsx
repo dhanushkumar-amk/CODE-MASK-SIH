@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -53,6 +53,22 @@ export default function TaskInput({
   const audioChunksRef = useRef<Blob[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(event.target as Node)) {
+        setShowAttachMenu(false);
+      }
+    }
+    if (showAttachMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAttachMenu]);
+
   const canRun = (taskText.trim().length > 0 || fileName !== null) && !submitting && !isRecording;
 
   const startRecording = async () => {
@@ -259,7 +275,7 @@ export default function TaskInput({
         <div className="flex items-center justify-between pt-1 relative">
           {/* Attachment Button & Voice Button Group */}
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div ref={attachMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => setShowAttachMenu(!showAttachMenu)}
@@ -269,56 +285,62 @@ export default function TaskInput({
                 <span>{fileName ? "Change" : "Attach"}</span>
               </button>
 
-              {/* Ultra-Minimal Attach Menu Dropdown */}
+              {/* Ultra-Minimal Attach Menu Dropdown & Fullscreen Click-Outside Overlay */}
               {showAttachMenu && (
-                <div className="absolute bottom-10 left-0 z-50 flex flex-col w-44 rounded-xl border border-slate-200/90 bg-white p-1 shadow-md font-sans text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPicker(".pdf,.docx,.doc,.txt")}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                    <span>Document / PDF</span>
-                  </button>
+                <>
+                  <div
+                    onClick={() => setShowAttachMenu(false)}
+                    className="fixed inset-0 z-40 bg-transparent"
+                  />
+                  <div className="absolute bottom-10 left-0 z-50 flex flex-col w-44 rounded-xl border border-slate-200/90 bg-white p-1 shadow-md font-sans text-xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPicker(".pdf,.docx,.doc,.txt")}
+                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                      <span>Document / PDF</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPicker(".csv,.xlsx,.xls")}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                  >
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span>CSV Data</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPicker(".csv,.xlsx,.xls")}
+                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <span>CSV Data</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPicker("image/*,.svg")}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                  >
-                    <ImageIcon className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                    <span>Image</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPicker("image/*,.svg")}
+                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <ImageIcon className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                      <span>Image</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPicker(".py,.java,.js,.ts,.json,.sh")}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
-                  >
-                    <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                    <span>Code File</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPicker(".py,.java,.js,.ts,.json,.sh")}
+                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-700 hover:bg-slate-100/80 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <FileCode className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                      <span>Code File</span>
+                    </button>
 
-                  <div className="h-px bg-slate-100 my-0.5" />
+                    <div className="h-px bg-slate-100 my-0.5" />
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPicker("*/*")}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-500 hover:bg-slate-100/80 transition-colors text-left font-normal cursor-pointer"
-                  >
-                    <Files className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>Any File</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPicker("*/*")}
+                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-500 hover:bg-slate-100/80 transition-colors text-left font-normal cursor-pointer"
+                    >
+                      <Files className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>Any File</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 

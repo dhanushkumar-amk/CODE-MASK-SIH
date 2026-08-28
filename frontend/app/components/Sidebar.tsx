@@ -20,8 +20,15 @@ export default function Sidebar({
         {/* Top Control Bar */}
         <div className="flex items-center justify-between px-2 pt-1 pb-1">
           <div className="flex items-center gap-2 font-bold text-sm text-white">
-            <div className="h-6 w-6 rounded-md bg-blue-600 flex items-center justify-center font-black text-xs text-white">
-              F
+            <div className="h-6 w-6 flex items-center justify-center">
+              <img
+                src="/image.png"
+                alt="Fortexa Logo"
+                className="h-full w-full object-contain"
+                style={{
+                  filter: "invert(37%) sepia(93%) saturate(2335%) hue-rotate(213deg) brightness(98%) contrast(92%)"
+                }}
+              />
             </div>
             <span>Fortexa</span>
           </div>

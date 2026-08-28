@@ -8,6 +8,7 @@ import OutputPanel from "@/app/components/OutputPanel";
 import { type HistoryItem } from "@/app/components/HistoryDrawer";
 import { User, CheckCircle2, Sparkles } from "lucide-react";
 import { playCompletionChime } from "@/lib/sound";
+import { addAdminAuditLog } from "@/lib/adminLog";
 import {
   type AgentRunResult,
   type AgentStreamEvent,
@@ -148,6 +149,23 @@ export default function Home() {
         try { localStorage.setItem("fortexa_history_map", JSON.stringify(updated)); } catch (e) {}
         return updated;
       });
+
+      // Save to Admin Audit Log (Last 30 records)
+      try {
+        const usedTools = event.results?.map((r) => r.tool_name).filter(Boolean) as string[] || [];
+        const taskType = routeResult?.task_type || "document";
+        const modelUsed = routeResult?.model || "qwen2.5:1.5b-instruct";
+        addAdminAuditLog({
+          prompt: event.goal,
+          task_type: taskType as any,
+          model: modelUsed,
+          tools_used: Array.from(new Set(usedTools)),
+          deliverable: deliverableFile,
+          status: event.completed ? "success" : "failed",
+        });
+      } catch (err) {
+        console.error("[ADMIN LOG] Sync error:", err);
+      }
 
       // Hide completion banner after 4s
       setTimeout(() => setShowCompletionBanner(false), 4000);

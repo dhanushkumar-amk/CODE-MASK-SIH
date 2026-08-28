@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, ShieldCheck } from "lucide-react";
 import HistoryDrawer, { type HistoryItem } from "@/app/components/HistoryDrawer";
 
 export default function Navbar({
@@ -25,8 +25,15 @@ export default function Navbar({
           onClick={onResetConsole}
           className="flex items-center gap-2 group cursor-pointer"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
-            F
+          <div className="flex h-8 w-8 items-center justify-center p-0.5 group-hover:scale-105 transition-transform">
+            <img
+              src="/image.png"
+              alt="Fortexa Logo"
+              className="h-full w-full object-contain"
+              style={{
+                filter: "invert(37%) sepia(93%) saturate(2335%) hue-rotate(213deg) brightness(98%) contrast(92%)"
+              }}
+            />
           </div>
           <span className="font-bold text-base text-slate-900 tracking-tight">
             Fortexa

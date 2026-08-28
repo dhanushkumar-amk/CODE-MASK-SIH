@@ -39,7 +39,7 @@ AudioSegment.ffprobe = FFMPEG_BIN  # ffprobe not needed for export, but set it
 # Model — loaded once, kept warm
 # ---------------------------------------------------------------------------
 MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(MODEL_DIR, "vosk-model-small-en-us-0.15")
+MODEL_PATH = os.path.join(MODEL_DIR, "vosk-model-en-us-0.22-lgraph")
 
 _vosk_model: Model | None = None
 _model_load_time: float = 0.0  # seconds it took to load
@@ -52,9 +52,9 @@ def _load_model() -> Model:
         if not os.path.isdir(MODEL_PATH):
             raise FileNotFoundError(
                 f"Vosk model directory not found: {MODEL_PATH}\n"
-                "Download vosk-model-small-en-us-0.15 from https://alphacephei.com/vosk/models and extract it there."
+                "Ensure vosk-model-en-us-0.22-lgraph is present at backend/voice/vosk-model-en-us-0.22-lgraph."
             )
-        print(f"[Vosk] Loading SMALL offline model from {MODEL_PATH} …")
+        print(f"[Vosk] Loading offline model from {MODEL_PATH} …")
         t0 = time.time()
         _vosk_model = Model(MODEL_PATH)
         _model_load_time = time.time() - t0
