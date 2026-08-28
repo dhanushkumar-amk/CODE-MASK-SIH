@@ -98,3 +98,6 @@
 {"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:15:02.318419"}
 {"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:24:18.787371"}
 {"task": "write a simle java code check given value is prime or not", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T03:33:35.900827"}
+{"task": "what is java", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T04:47:29.951710"}
+{"task": "what is java", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T05:06:04.040883"}
+{"task": "what is machine learning", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T05:08:09.777691"}

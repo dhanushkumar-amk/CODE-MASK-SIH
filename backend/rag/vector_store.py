@@ -125,6 +125,14 @@ def query_knowledge_base(query: str, n_results: int = 3) -> dict:
         (meta or {}).get("source", "unknown") for meta in metadatas
     ]
 
+    try:
+        from provenance.provenance_tracker import add_source_document
+        for src in sources:
+            if src and src != "unknown":
+                add_source_document(src)
+    except Exception:
+        pass
+
     return {"status": "success", "output": texts, "sources": sources}
 
 

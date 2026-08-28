@@ -82,6 +82,21 @@ def dispatch_tool_call(parsed_response: dict) -> dict:
             "output": f"Unknown tool: {tool_name}",
         }
 
+    # Automatically track file reads / OCR inputs / RAG queries for provenance audit trail
+    try:
+        from provenance.provenance_tracker import add_source_document, get_current_provenance_record
+        if tool_name in ("file_read", "ocr_extract_image", "ocr_extract_pdf"):
+            path_src = tool_input.get("path") or tool_input.get("pdf_path") or tool_input.get("image_path") or tool_input.get("filename")
+            if path_src and isinstance(path_src, str):
+                add_source_document(path_src)
+
+        # Inject automatic provenance record for deliverable tools if not explicitly passed
+        if tool_name in ("docx_generate", "pptx_generate", "xlsx_generate"):
+            if "provenance_record" not in tool_input or tool_input["provenance_record"] is None:
+                tool_input["provenance_record"] = get_current_provenance_record()
+    except Exception as prov_err:
+        print(f"[DISPATCHER] Provenance tracking note: {prov_err}")
+
     # The small model sometimes leaks schema keys (like "reasoning") into
     # tool_input. Filter to the parameters the tool function actually
     # accepts, so a stray key becomes a no-op instead of a TypeError.
@@ -161,6 +176,15 @@ def _rag_retrieve_for_agent(query: str, n_results: int = 3) -> dict:
     result = query_knowledge_base(query, n_results)
     if result["status"] != "success":
         return result
+
+    # Track retrieved source documents in provenance context
+    try:
+        from provenance.provenance_tracker import add_source_document
+        for src in result.get("sources", []):
+            if src and src != "unknown":
+                add_source_document(src)
+    except Exception:
+        pass
 
     blocks = []
     for text, source in zip(result["output"], result["sources"]):

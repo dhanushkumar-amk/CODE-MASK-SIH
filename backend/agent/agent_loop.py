@@ -367,6 +367,17 @@ def run_agent_stream(goal: str, max_steps: int = 6):
     """
     yield {"event": "run_started", "goal": goal}
 
+    # Initialize provenance context for this run
+    try:
+        from provenance.provenance_tracker import reset_provenance_context, set_routing_context
+        from router.router import classify_task
+        from config import get_model_for_task
+        reset_provenance_context()
+        ttype = classify_task(goal)
+        set_routing_context(get_model_for_task(ttype), ttype)
+    except Exception as prov_init_err:
+        print(f"[AGENT] Provenance session init note: {prov_init_err}")
+
     plan = _plan(goal)[:max_steps]
     yield {"event": "plan_ready", "goal": goal, "plan": plan}
 

@@ -199,6 +199,12 @@ def route_task(task_description: str) -> dict:
         "timestamp": timestamp,
     }
 
+    try:
+        from provenance.provenance_tracker import set_routing_context
+        set_routing_context(model_name, task_type, timestamp)
+    except Exception as exc:
+        print(f"[ROUTER] Provenance context update note: {exc}")
+
     print(f"[ROUTER] {timestamp} | task_type={task_type} | model={model_name}")
 
     os.makedirs(LOG_DIR, exist_ok=True)

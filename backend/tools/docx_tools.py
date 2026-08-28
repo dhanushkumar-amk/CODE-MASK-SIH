@@ -41,7 +41,12 @@ def _slugify(title: str) -> str:
     return slug or "document"
 
 
-def docx_generate(title: str, content: str, filename: str = None) -> dict:
+def docx_generate(
+    title: str,
+    content: str,
+    filename: str = None,
+    provenance_record: dict = None,
+) -> dict:
     """Create a Word document in the workspace and save it.
 
     Args:
@@ -51,6 +56,8 @@ def docx_generate(title: str, content: str, filename: str = None) -> dict:
         filename: Optional output name. Defaults to a slug of the title
             (e.g. "Approval Note" -> "approval_note.docx"). ".docx" is
             appended if missing.
+        provenance_record: Optional provenance metadata dict. When provided,
+            adds a "Provenance & Audit Trail" section at the end of the document.
 
     Returns:
         {"status": "success", "output": "Document saved as <name>",
@@ -99,6 +106,29 @@ def docx_generate(title: str, content: str, filename: str = None) -> dict:
             if not paragraph_text:
                 continue
             doc.add_paragraph(paragraph_text)
+
+        # Append Provenance & Audit Trail section if requested or available
+        try:
+            from provenance.provenance_tracker import (
+                format_provenance_footer,
+                get_current_provenance_record,
+            )
+            if provenance_record is None and get_current_provenance_record is not None:
+                provenance_record = get_current_provenance_record()
+            
+            if provenance_record and format_provenance_footer is not None:
+                doc.add_heading("Provenance & Audit Trail", level=3)
+                footer_text = format_provenance_footer(provenance_record)
+                p = doc.add_paragraph(footer_text)
+                try:
+                    from docx.shared import Pt, RGBColor
+                    for run in p.runs:
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = RGBColor(128, 128, 128)
+                except Exception:
+                    pass
+        except Exception as prov_exc:
+            print(f"[DOCX] Provenance footer skipped: {prov_exc}")
 
         safe_path.parent.mkdir(parents=True, exist_ok=True)
         doc.save(str(safe_path))

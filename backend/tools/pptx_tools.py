@@ -62,7 +62,12 @@ def _validate_slides(slides) -> str | None:
     return None
 
 
-def pptx_generate(title: str, slides: list, filename: str = None) -> dict:
+def pptx_generate(
+    title: str,
+    slides: list,
+    filename: str = None,
+    provenance_record: dict = None,
+) -> dict:
     """Create a PowerPoint presentation in the workspace and save it.
 
     Args:
@@ -71,6 +76,8 @@ def pptx_generate(title: str, slides: list, filename: str = None) -> dict:
         filename: Optional output name. Defaults to a slug of the title
             (e.g. "Weekly Review" -> "weekly_review.pptx"). ".pptx" is
             appended if missing.
+        provenance_record: Optional provenance metadata dict. When provided,
+            adds a final "Provenance & Audit Trail" slide.
 
     Returns:
         {"status": "success", "output": "Presentation saved as <name>",
@@ -120,6 +127,23 @@ def pptx_generate(title: str, slides: list, filename: str = None) -> dict:
             slide = prs.slides.add_slide(prs.slide_layouts[1])
             slide.shapes.title.text = slide_data["heading"]
             slide.placeholders[1].text = slide_data["body"]
+
+        # Append Provenance & Audit Trail slide if requested or available
+        try:
+            from provenance.provenance_tracker import (
+                format_provenance_footer,
+                get_current_provenance_record,
+            )
+            if provenance_record is None and get_current_provenance_record is not None:
+                provenance_record = get_current_provenance_record()
+
+            if provenance_record and format_provenance_footer is not None:
+                prov_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                prov_slide.shapes.title.text = "Provenance & Audit Trail"
+                footer_text = format_provenance_footer(provenance_record)
+                prov_slide.placeholders[1].text = footer_text
+        except Exception as prov_exc:
+            print(f"[PPTX] Provenance slide skipped: {prov_exc}")
 
         safe_path.parent.mkdir(parents=True, exist_ok=True)
         prs.save(str(safe_path))
