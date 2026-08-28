@@ -118,3 +118,10 @@
 {"task": "what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:36:20.378234"}
 {"task": "write the simple java code check the given numbe is odd or even", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:36:48.680907"}
 {"task": "extract the text from the given image (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:37:26.944130"}
+{"task": "write the simple java program to find  greatest of three numbers", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:53:02.018053"}
+{"task": "write the simple java program to find greatest of three numbers using if else statement", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:53:46.196786"}
+{"task": "what is self attention on transformer", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:54:43.962372"}
+{"task": "Extract the text from the given image (attached file: download.jpeg)", "task_type": "vision", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:56:50.420092"}
+{"task": "generate the docxs with title of what is api", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T10:58:31.874590"}
+{"task": "write the simple java program to find greatest of three numbers using if else statement", "task_type": "coding", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T11:10:38.414207"}
+{"task": "extract the text (attached file: download.jpeg)", "task_type": "document", "model": "qwen2.5:1.5b-instruct", "timestamp": "2026-08-28T11:23:21.495624"}
