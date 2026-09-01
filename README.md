@@ -643,14 +643,6 @@ cd frontend && npx tsc --noEmit
 - Client-side "DOCX" and "PDF" exports are HTML/print-based approximations; the real document formats come from the backend generators.
 - No auth layer, no CI pipeline, no automated test runner yet.
 
-**Roadmap**
-
-- [ ] Env-var configuration (`NEXT_PUBLIC_BACKEND_URL`, `.env.example`)
-- [ ] Restrict CORS to `http://localhost:3000`, drop `allow_credentials`
-- [ ] Upload size caps + auth middleware
-- [ ] Replace hardcoded demo fallbacks in `agent_loop.py` with general normalization
-- [ ] pytest + vitest suites, GitHub Actions CI
-- [ ] Docker Compose for the 3-service stack (Ollama + backend + frontend)
 
 ---
 
